@@ -1,0 +1,100 @@
+{
+  "appTitle": "Stories that matter",
+  "idleVideo": {
+    "label": "Welcome",
+    "src": "",
+    "placeholderDuration": 8
+  },
+  "stations": {
+    "maya": {
+      "name": "MAYA",
+      "accent": "#8ce2d0",
+      "welcomeVideo": {
+        "label": "Welcome to Maya's story",
+        "src": "",
+        "placeholderDuration": 6
+      },
+      "videos": [
+        {
+          "id": "maya-1",
+          "label": "Maya · Story 1",
+          "src": "",
+          "placeholderDuration": 7
+        },
+        {
+          "id": "maya-2",
+          "label": "Maya · Story 2",
+          "src": "",
+          "placeholderDuration": 7
+        },
+        {
+          "id": "maya-3",
+          "label": "Maya · Story 3",
+          "src": "",
+          "placeholderDuration": 7
+        }
+      ],
+      "finalText": "Thank you for spending time with Maya. Every story helps us understand what matters most."
+    },
+    "mo": {
+      "name": "MO",
+      "accent": "#ffd27c",
+      "welcomeVideo": {
+        "label": "Welcome to Mo's story",
+        "src": "",
+        "placeholderDuration": 6
+      },
+      "videos": [
+        {
+          "id": "mo-1",
+          "label": "Mo · Story 1",
+          "src": "",
+          "placeholderDuration": 7
+        },
+        {
+          "id": "mo-2",
+          "label": "Mo · Story 2",
+          "src": "",
+          "placeholderDuration": 7
+        },
+        {
+          "id": "mo-3",
+          "label": "Mo · Story 3",
+          "src": "",
+          "placeholderDuration": 7
+        }
+      ],
+      "finalText": "Thank you for spending time with Mo. Listening with care can make a meaningful difference."
+    },
+    "mary": {
+      "name": "MARY",
+      "accent": "#f2a8c1",
+      "welcomeVideo": {
+        "label": "Welcome to Mary's story",
+        "src": "",
+        "placeholderDuration": 6
+      },
+      "videos": [
+        {
+          "id": "mary-1",
+          "label": "Mary · Story 1",
+          "src": "",
+          "placeholderDuration": 7
+        },
+        {
+          "id": "mary-2",
+          "label": "Mary · Story 2",
+          "src": "",
+          "placeholderDuration": 7
+        },
+        {
+          "id": "mary-3",
+          "label": "Mary · Story 3",
+          "src": "",
+          "placeholderDuration": 7
+        }
+      ],
+      "finalText": "Thank you for spending time with Mary. Sharing experiences helps every person feel seen and heard."
+    }
+  }
+}

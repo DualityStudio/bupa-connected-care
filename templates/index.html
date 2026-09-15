@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#071f37">
+    <title>{{ content.appTitle }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  </head>
+  <body>
+    <main id="app" class="app-shell">
+      <div id="connection-banner" class="connection-banner" hidden>
+        The kiosk server is unavailable. Reconnecting…
+      </div>
+
+      <button id="admin-reset" class="admin-reset" type="button" aria-label="Reset visitor experience" hidden></button>
+
+      <section id="setup-screen" class="screen setup-screen" aria-live="polite">
+        <div class="setup-card">
+          <p class="eyebrow">Installation setup</p>
+          <h1 id="setup-title">Test the pressure mat</h1>
+          <p id="setup-copy" class="setup-copy">Stand on the mat to confirm it is connected and responding.</p>
+
+          <div id="mat-indicator" class="mat-indicator">
+            <span class="mat-indicator__light" aria-hidden="true"></span>
+            <span id="mat-indicator-text">Waiting for pressure</span>
+          </div>
+
+          <div id="station-picker" class="station-picker" hidden>
+            <p class="station-picker__label">Choose this screen</p>
+            <div class="station-picker__buttons">
+              {% for station_id, station in content.stations.items() %}
+                <button class="station-button" type="button" data-station="{{ station_id }}">
+                  {{ station.name }}
+                </button>
+              {% endfor %}
+            </div>
+          </div>
+
+          <p id="mode-label" class="mode-label">Checking input…</p>
+        </div>
+      </section>
+
+      <section id="experience-screen" class="screen experience-screen" hidden>
+        <div id="media-frame" class="media-frame">
+          <video id="video-player" playsinline preload="auto"></video>
+
+          <div id="placeholder-player" class="placeholder-player" hidden>
+            <div class="placeholder-player__orb" aria-hidden="true"></div>
+            <p class="placeholder-player__overline">Testing placeholder</p>
+            <h2 id="placeholder-label"></h2>
+            <div class="placeholder-player__progress" aria-hidden="true"><span></span></div>
+          </div>
+
+          <p id="media-error" class="media-error" hidden></p>
+          <button id="autoplay-prompt" class="autoplay-prompt" type="button" hidden>
+            Tap to start video and sound
+          </button>
+        </div>
+
+        <div id="choice-panel" class="choice-panel" hidden>
+          <p class="choice-panel__prompt">Choose a story to watch</p>
+          <div id="video-choices" class="video-choices"></div>
+        </div>
+      </section>
+
+      <section id="complete-screen" class="screen complete-screen" hidden aria-live="polite">
+        <div class="complete-card">
+          <p id="complete-station" class="eyebrow"></p>
+          <p id="final-text" class="final-text"></p>
+          <p class="complete-hint">Step off the mat when you are ready to finish.</p>
+        </div>
+      </section>
+
+      <aside id="countdown" class="countdown" hidden aria-live="assertive">
+        <span class="countdown__label">Resetting in</span>
+        <strong id="countdown-number">5</strong>
+      </aside>
+    </main>
+
+    <script id="content-config" type="application/json">{{ content | tojson }}</script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  </body>
+</html>

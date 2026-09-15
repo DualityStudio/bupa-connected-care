@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071f37">
+    <title>Pressure mat controller</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mock.css') }}">
+  </head>
+  <body>
+    <main class="controller">
+      <header class="controller__header">
+        <div>
+          <p class="eyebrow">Testing tool</p>
+          <h1>Pressure mat controller</h1>
+        </div>
+        <a href="/" target="_blank" rel="noopener">Open visitor screen</a>
+      </header>
+
+      <section class="status-card" aria-live="polite">
+        <div id="connection-state" class="connection-state connection-state--waiting">Connecting…</div>
+        <p class="status-card__label">Simulated mat state</p>
+        <p id="pressure-state" class="pressure-state">Released</p>
+        <p id="station-state" class="station-state">Station: not selected</p>
+      </section>
+
+      <section class="controls" aria-label="Pressure mat controls">
+        <button id="press-button" class="control-button control-button--press" type="button">
+          <span>Stand on mat</span>
+          <small>Set pressure to pressed</small>
+        </button>
+        <button id="release-button" class="control-button control-button--release" type="button">
+          <span>Step off mat</span>
+          <small>Set pressure to released</small>
+        </button>
+      </section>
+
+      <p id="controller-message" class="controller-message">
+        The setting stays latched until you press the other button or restart the server.
+      </p>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/mock.js') }}" defer></script>
+  </body>
+</html>
