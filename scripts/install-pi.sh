@@ -36,6 +36,7 @@ if getent group gpio >/dev/null; then
 fi
 
 chmod +x "${APP_DIR}/scripts/start-kiosk.sh" "${APP_DIR}/scripts/install-pi.sh"
+"${SUDO[@]}" install -d -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" "${APP_DIR}/data/stats"
 
 SERVICE_TEMP="$(mktemp)"
 AUTOSTART_TEMP="$(mktemp)"

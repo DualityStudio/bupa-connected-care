@@ -57,6 +57,25 @@
     elements.connectionBanner.hidden = connected;
   }
 
+  function recordStatEvent(type, details = {}) {
+    if (!selectedStationId) {
+      return;
+    }
+
+    fetch("/api/stats/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type,
+        station: selectedStationId,
+        ...details,
+      }),
+      keepalive: true,
+    }).catch((error) => {
+      console.warn("Could not save statistics event", error);
+    });
+  }
+
   function showOnly(screen) {
     elements.setupScreen.hidden = screen !== "setup";
     elements.experienceScreen.hidden = screen !== "experience";
@@ -130,7 +149,7 @@
     activeVideoId = null;
     state = "idle";
     showExperience(false);
-    playMedia(content.idleVideo, { loop: true });
+    playMedia(content.idleVideo, { loop: true, analyticsId: "idle" });
   }
 
   function startWelcome() {
@@ -140,9 +159,11 @@
       return;
     }
 
+    recordStatEvent("pressure_trigger");
     state = "welcome";
     showExperience(false);
     playMedia(station.welcomeVideo, {
+      analyticsId: "welcome",
       onEnded: showVideoChoices,
     });
   }
@@ -189,6 +210,7 @@
     activeVideoId = video.id;
     showExperience(false);
     playMedia(video, {
+      analyticsId: video.id,
       onEnded: () => finishSelectedVideo(video.id),
     });
   }
@@ -208,6 +230,7 @@
 
   function showCompletion() {
     stopMedia();
+    recordStatEvent("sequence_complete");
     state = "complete";
     setStationDisplay();
     showOnly("complete");
@@ -282,6 +305,10 @@
     stopMedia();
     const generation = playbackGeneration;
     animateMediaEntrance();
+
+    if (options.analyticsId) {
+      recordStatEvent("video_play", { video_id: options.analyticsId });
+    }
 
     if (!media.src) {
       startPlaceholder(media, options, generation);

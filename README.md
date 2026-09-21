@@ -107,6 +107,32 @@ The installer:
 
 The station selection is saved under `/run/bupa-screen`. Page refreshes and automatic service restarts retain it, while stopping the service or rebooting the Pi clears it and returns to mat testing and station selection.
 
+## Daily statistics
+
+The kiosk writes one file per day under `data/stats`, for example `data/stats/2026-09-16.json`. These generated files are ignored by Git and remain on the Pi across service restarts and reboots.
+
+Each file records:
+
+- Pressure-mat visitor triggers, as a total and by station. Setup testing and returning during the reset countdown are not counted.
+- Every idle, welcome, and story video start. Replays count as additional plays.
+- Completed sequences, as a total and by station, when a visitor reaches the final text.
+
+Dates and midnight rollover use the Pi's configured local timezone. Old days are retained and the next event after midnight creates a new file with fresh counters. The filenames and video keys come from `content.json`, so it is best to copy the files off the Pi before renaming video IDs.
+
+To list the available files on the Pi:
+
+```bash
+ls -lh data/stats
+```
+
+From another computer, copy them into a device-specific folder with `scp`, replacing the username, hostname, and project path as needed:
+
+```bash
+scp 'pi@raspberrypi.local:/path/to/bupa-screen-project/data/stats/*.json' ./maya-screen-stats/
+```
+
+Before a live event, move any test-day JSON files elsewhere or delete those individual files. The kiosk recreates the current day's file on the next recorded event.
+
 ### Display and sound setup
 
 Before exhibition use, open **Raspberry Pi menu → Preferences → Control Centre**:
