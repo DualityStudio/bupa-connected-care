@@ -29,13 +29,16 @@ fi
 
 echo "Installing Raspberry Pi packages…"
 "${SUDO[@]}" apt update
-"${SUDO[@]}" apt install -y python3-flask python3-gpiozero python3-waitress chromium curl
+"${SUDO[@]}" apt install -y python3-flask python3-gpiozero python3-waitress chromium curl git
 
 if getent group gpio >/dev/null; then
   "${SUDO[@]}" usermod -a -G gpio "${KIOSK_USER}"
 fi
 
-chmod +x "${APP_DIR}/scripts/start-kiosk.sh" "${APP_DIR}/scripts/install-pi.sh"
+chmod +x \
+  "${APP_DIR}/scripts/start-kiosk.sh" \
+  "${APP_DIR}/scripts/update-on-boot.sh" \
+  "${APP_DIR}/scripts/install-pi.sh"
 "${SUDO[@]}" install -d -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" "${APP_DIR}/data/stats"
 
 SERVICE_TEMP="$(mktemp)"
@@ -48,7 +51,8 @@ trap cleanup EXIT
 cat >"${SERVICE_TEMP}" <<EOF
 [Unit]
 Description=Bupa pressure-mat screen
-After=local-fs.target
+Wants=network-online.target
+After=local-fs.target network-online.target
 
 [Service]
 Type=simple
@@ -62,6 +66,7 @@ Environment=PYTHONUNBUFFERED=1
 RuntimeDirectory=bupa-screen
 RuntimeDirectoryMode=0755
 RuntimeDirectoryPreserve=restart
+ExecStartPre=${APP_DIR}/scripts/update-on-boot.sh
 ExecStart=/usr/bin/waitress-serve --listen=0.0.0.0:5000 --threads=4 app:app
 Restart=always
 RestartSec=2

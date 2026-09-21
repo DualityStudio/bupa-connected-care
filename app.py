@@ -254,6 +254,11 @@ def mock_controller():
     return render_template("mock.html")
 
 
+@app.get("/mat-test")
+def mat_test():
+    return render_template("mat-test.html")
+
+
 @app.get("/health")
 def health():
     return jsonify({"ok": True, "mode": pressure_input.mode})

@@ -15,6 +15,7 @@
     setupCopy: document.getElementById("setup-copy"),
     matIndicator: document.getElementById("mat-indicator"),
     matIndicatorText: document.getElementById("mat-indicator-text"),
+    matTestLink: document.getElementById("mat-test-link"),
     stationPicker: document.getElementById("station-picker"),
     stationButtons: [...document.querySelectorAll("[data-station]")],
     modeLabel: document.getElementById("mode-label"),
@@ -100,6 +101,7 @@
     elements.setupTitle.textContent = "Test the pressure mat";
     elements.setupCopy.textContent = "Stand on the mat to confirm it is connected and responding.";
     setMatIndicator(false, "Waiting for pressure");
+    elements.matTestLink.hidden = false;
     elements.stationPicker.hidden = true;
   }
 
@@ -110,6 +112,7 @@
     elements.setupTitle.textContent = "Pressure mat connected";
     elements.setupCopy.textContent = "The mat responded correctly. Now choose which story this screen will show.";
     setMatIndicator(true, "Pressure detected — test complete");
+    elements.matTestLink.hidden = false;
     elements.stationPicker.hidden = false;
   }
 
@@ -122,6 +125,7 @@
     elements.setupTitle.textContent = "Setup complete";
     elements.setupCopy.textContent = "Step off the pressure mat to arm the experience for the first visitor.";
     setMatIndicator(true, "Waiting for the mat to be released");
+    elements.matTestLink.hidden = true;
     elements.stationPicker.hidden = true;
   }
 

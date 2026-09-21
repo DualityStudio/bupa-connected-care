@@ -31,6 +31,8 @@ Open these two pages:
 
 The controller has separate **Stand on mat** and **Step off mat** buttons. Its state stays latched, just like remaining on or leaving a physical pressure mat.
 
+The initial setup screen also links to a repeated press test at `/mat-test`. This page counts each released-to-pressed transition, shows the live mat state, and provides a reset button. Its temporary count is not included in the daily visitor statistics.
+
 To control the experience from another device on the same network, replace `localhost` with the server computer's IP address or hostname. For example: `http://raspberrypi.local:5000/mock`.
 
 ## Visitor flow
@@ -98,15 +100,32 @@ sudo reboot
 
 The installer:
 
-- Installs Flask, Waitress, GPIO Zero, Chromium, and curl from Raspberry Pi OS packages.
+- Installs Flask, Waitress, GPIO Zero, Chromium, curl, and Git from Raspberry Pi OS packages.
 - Grants the kiosk user GPIO access.
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
 - Adds a managed kiosk entry to `~/.config/labwc/autostart`.
+- Checks the configured Git remote once per boot and runs a fast-forward-only pull when the remote is reachable. A failed or unavailable update never prevents startup.
 - Waits for the local server, then opens Chromium fullscreen with audible autoplay enabled. Chromium uses its local basic password store so automatic login does not prompt to unlock the desktop keyring.
 - Restarts Chromium after an unexpected failure, while allowing a deliberate `Alt` + `F4` close to remain closed for maintenance.
 
 The station selection is saved under `/run/bupa-screen`. Page refreshes and automatic service restarts retain it, while stopping the service or rebooting the Pi clears it and returns to mat testing and station selection.
+
+### Automatic updates
+
+The update check runs before the server starts. It contacts the repository's existing `origin` remote, which verifies both internet connectivity and Git access more accurately than testing an unrelated website. If the check succeeds, the Pi runs `git pull --ff-only`; otherwise it immediately continues with the installed version. The remote check has a 15-second limit and the pull has a five-minute limit.
+
+The pull is non-interactive. Private repositories therefore need an SSH key or other credentials that already work without entering a password. Local changes or a branch that cannot be fast-forwarded are left untouched and cause the update to be skipped safely. Details are written to the service journal.
+
+To enable automatic updates on an already-installed Pi, pull this version and run the installer once more:
+
+```bash
+git pull --ff-only
+./scripts/install-pi.sh
+sudo reboot
+```
+
+Future reboots will update automatically. Ordinary service crash restarts do not repeatedly contact Git. If a future update changes system packages or the system service itself, rerun `./scripts/install-pi.sh` manually after that update.
 
 ## Daily statistics
 
