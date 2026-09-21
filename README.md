@@ -103,7 +103,8 @@ The installer:
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
 - Adds a managed kiosk entry to `~/.config/labwc/autostart`.
-- Waits for the local server, then opens Chromium fullscreen with audible autoplay enabled. If Chromium exits unexpectedly, the launcher starts it again after two seconds.
+- Waits for the local server, then opens Chromium fullscreen with audible autoplay enabled. Chromium uses its local basic password store so automatic login does not prompt to unlock the desktop keyring.
+- Restarts Chromium after an unexpected failure, while allowing a deliberate `Alt` + `F4` close to remain closed for maintenance.
 
 The station selection is saved under `/run/bupa-screen`. Page refreshes and automatic service restarts retain it, while stopping the service or rebooting the Pi clears it and returns to mat testing and station selection.
 
@@ -144,6 +145,38 @@ Before exhibition use, open **Raspberry Pi menu → Preferences → Control Cent
 The idle loop is deliberately audible. Chromium is started with `--autoplay-policy=no-user-gesture-required`; an ordinary browser without this flag displays a tap-to-start prompt if it blocks sound.
 
 ## Operation and troubleshooting
+
+### Leave kiosk mode and perform maintenance
+
+With a keyboard connected, press `Alt` + `F4` to close Chromium. A normal close now leaves the desktop visible instead of triggering the crash restart loop. Open a terminal with `Ctrl` + `Alt` + `T`.
+
+To launch the kiosk again without rebooting, run this from the project directory:
+
+```bash
+./scripts/start-kiosk.sh &
+```
+
+If a Pi is still running an older version of the launcher that immediately reopens Chromium, press `Ctrl` + `Alt` + `F2` to reach a text login. Log in with the Pi username and password; Chromium can continue running on the desktop without blocking this console. From there you can update and reboot:
+
+```bash
+cd /path/to/bupa-screen-project
+git pull --ff-only
+sudo reboot
+```
+
+Use `Ctrl` + `Alt` + `F7` to return to the graphical desktop if you decide not to reboot. On an installation that assigns the desktop to a different console, try `Ctrl` + `Alt` + `F1` instead.
+
+For routine remote maintenance, enable SSH in **Raspberry Pi Configuration → Interfaces → SSH**. You can then connect from another computer:
+
+```bash
+ssh your-username@raspberrypi.local
+```
+
+From that connection, use `git pull --ff-only` followed by `sudo reboot` to deploy an update, or shut down safely with:
+
+```bash
+sudo poweroff
+```
 
 Check the service:
 

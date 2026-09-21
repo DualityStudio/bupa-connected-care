@@ -23,12 +23,14 @@ while true; do
       --noerrdialogs \
       --disable-infobars \
       --no-first-run \
+      --password-store=basic \
       --disable-session-crashed-bubble \
       --disable-pinch \
       --overscroll-history-navigation=0 \
       --autoplay-policy=no-user-gesture-required \
       "${KIOSK_URL}"; then
-    CHROMIUM_EXIT_CODE=0
+    echo "Chromium was closed normally. Leaving kiosk mode." >&2
+    break
   else
     CHROMIUM_EXIT_CODE=$?
   fi
