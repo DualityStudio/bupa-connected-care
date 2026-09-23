@@ -4,7 +4,7 @@ A local Flask application for a Raspberry Pi 4, portrait touchscreen, and pressu
 
 - Boot-time mat testing and MAYA/MO/MARY station selection.
 - A shared idle loop, station welcome video, three watched/replayable stories, and final text.
-- Five-second step-away reset and a hidden reset target in the top-right 96 pixels.
+- Five-second step-away reset and a hidden 10-tap system menu.
 - A separate mock controller that can be loaded on a phone or second computer.
 - Timed animated placeholders, so the complete interaction works before the videos arrive.
 
@@ -39,14 +39,13 @@ To control the experience from another device on the same network, replace `loca
 
 1. Use the mat once to pass the setup test.
 2. Select MAYA, MO, or MARY.
-3. Release the mat so the experience can arm.
-4. The shared idle video loops until a fresh press.
-5. A press plays the selected station's welcome video.
-6. Watch the three stories in any order. Watched stories remain available for replay.
-7. The station's final text appears after all three distinct stories finish.
-8. Leaving the mat for five continuous seconds clears progress and returns to idle. Returning during the countdown cancels it.
+3. If the mat is still pressed when the persona is selected, its welcome video starts immediately and the story buttons light up. Otherwise, the shared idle video loops with the buttons dimmed until someone stands on the mat.
+4. A fresh press plays the selected station's welcome video. The buttons remain available, and when the welcome finishes the idle video starts again.
+5. Watch the three stories in any order. Buttons remain visible during playback, another story can be selected at any time, and watched stories remain available for replay.
+6. Each completed story returns to the idle loop. After all three distinct stories finish, the station's final text appears over that loop while the replay buttons remain available.
+7. Leaving the mat switches an active welcome or story back to the idle loop and dims the buttons. Returning during the five-second countdown restores the session; expiry clears watched progress while the idle video continues.
 
-The invisible top-right 96 × 96 pixel area resets the visitor experience immediately. It does not change the selected station.
+Tap the video area 10 times within four seconds to open the hidden system menu. Taps on the story buttons do not count. The menu can reset the visitor experience, change the persona, or open the statistics page. Resetting does not change the selected persona.
 
 ## Edit the content
 
@@ -130,6 +129,8 @@ Future reboots will update automatically. Ordinary service crash restarts do not
 ## Daily statistics
 
 The kiosk writes one file per day under `data/stats`, for example `data/stats/2026-09-16.json`. These generated files are ignored by Git and remain on the Pi across service restarts and reboots.
+
+Open `/stats` on the Pi, or choose **View statistics** in the hidden system controls, to view every available daily file. Dates use UK day/month/year formatting, and a dropdown at the top selects any earlier saved day. The page is read-only and includes a refresh button.
 
 Each file records:
 

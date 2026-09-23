@@ -242,6 +242,101 @@ video_stat_keys = tuple(
         for video in station["videos"]
     ]
 )
+video_stat_labels = {"idle": content_config["idleVideo"]["label"]}
+for station_id, station in content_config["stations"].items():
+    video_stat_labels[f"{station_id}.welcome"] = station["welcomeVideo"]["label"]
+    for video in station["videos"]:
+        video_stat_labels[f"{station_id}.{video['id']}"] = video["label"]
+
+
+def safe_count(value: Any) -> int:
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return 0
+
+
+def format_uk_date(value: str) -> str:
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%d/%m/%Y")
+    except ValueError:
+        return value
+
+
+def format_uk_timestamp(value: Any) -> str | None:
+    if not value:
+        return None
+
+    timestamp = str(value)
+    try:
+        return datetime.fromisoformat(timestamp).strftime("%d/%m/%Y, %H:%M")
+    except ValueError:
+        return timestamp
+
+
+def load_stats_history() -> tuple[list[dict[str, Any]], list[str]]:
+    records: list[dict[str, Any]] = []
+    errors: list[str] = []
+
+    if not STATS_DIR.exists():
+        return records, errors
+
+    for stats_path in sorted(STATS_DIR.glob("*.json"), reverse=True):
+        try:
+            raw_stats = json.loads(stats_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            errors.append(stats_path.name)
+            continue
+
+        if not isinstance(raw_stats, dict):
+            errors.append(stats_path.name)
+            continue
+
+        pressure_stats = raw_stats.get("pressure_mat_triggers", {})
+        pressure_stats = pressure_stats if isinstance(pressure_stats, dict) else {}
+        pressure_by_station = pressure_stats.get("by_station", {})
+        pressure_by_station = pressure_by_station if isinstance(pressure_by_station, dict) else {}
+
+        completion_stats = raw_stats.get("sequences_completed", {})
+        completion_stats = completion_stats if isinstance(completion_stats, dict) else {}
+        completion_by_station = completion_stats.get("by_station", {})
+        completion_by_station = completion_by_station if isinstance(completion_by_station, dict) else {}
+
+        raw_video_plays = raw_stats.get("video_plays", {})
+        raw_video_plays = raw_video_plays if isinstance(raw_video_plays, dict) else {}
+        video_keys = list(video_stat_keys)
+        video_keys.extend(sorted(set(raw_video_plays) - set(video_keys)))
+
+        date_value = raw_stats.get("date")
+        date_value = date_value if isinstance(date_value, str) else stats_path.stem
+
+        records.append(
+            {
+                "date": date_value,
+                "date_display": format_uk_date(date_value),
+                "updated_at": format_uk_timestamp(raw_stats.get("updated_at")),
+                "pressure_total": safe_count(pressure_stats.get("total")),
+                "completion_total": safe_count(completion_stats.get("total")),
+                "stations": [
+                    {
+                        "name": station["name"],
+                        "pressure": safe_count(pressure_by_station.get(station_id)),
+                        "completions": safe_count(completion_by_station.get(station_id)),
+                    }
+                    for station_id, station in content_config["stations"].items()
+                ],
+                "videos": [
+                    {
+                        "name": video_stat_labels.get(video_key, video_key),
+                        "key": video_key,
+                        "plays": safe_count(raw_video_plays.get(video_key)),
+                    }
+                    for video_key in video_keys
+                ],
+            }
+        )
+
+    return records, errors
 
 
 @app.get("/")
@@ -257,6 +352,23 @@ def mock_controller():
 @app.get("/mat-test")
 def mat_test():
     return render_template("mat-test.html")
+
+
+@app.get("/stats")
+def stats_dashboard():
+    records, errors = load_stats_history()
+    requested_date = request.args.get("date", "")
+    selected_record = next(
+        (record for record in records if record["date"] == requested_date),
+        records[0] if records else None,
+    )
+    response = render_template(
+        "stats.html",
+        records=records,
+        selected_record=selected_record,
+        errors=errors,
+    )
+    return response, 200, {"Cache-Control": "no-store"}
 
 
 @app.get("/health")

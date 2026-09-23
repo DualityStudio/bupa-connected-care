@@ -13,12 +13,10 @@
         The kiosk server is unavailable. Reconnecting…
       </div>
 
-      <button id="admin-reset" class="admin-reset" type="button" aria-label="Reset visitor experience" hidden></button>
-
       <section id="setup-screen" class="screen setup-screen" aria-live="polite">
         <div class="setup-card">
-          <p class="eyebrow">Installation setup</p>
-          <h1 id="setup-title">Test the pressure mat</h1>
+          <p class="eyebrow">Installation Setup</p>
+          <h1 id="setup-title">Test the Pressure Mat</h1>
           <p id="setup-copy" class="setup-copy">Stand on the mat to confirm it is connected and responding.</p>
 
           <div id="mat-indicator" class="mat-indicator">
@@ -31,7 +29,7 @@
           </a>
 
           <div id="station-picker" class="station-picker" hidden>
-            <p class="station-picker__label">Choose this screen</p>
+            <p class="station-picker__label">Choose This Screen</p>
             <div class="station-picker__buttons">
               {% for station_id, station in content.stations.items() %}
                 <button class="station-button" type="button" data-station="{{ station_id }}">
@@ -51,9 +49,15 @@
 
           <div id="placeholder-player" class="placeholder-player" hidden>
             <div class="placeholder-player__orb" aria-hidden="true"></div>
-            <p class="placeholder-player__overline">Testing placeholder</p>
+            <p class="placeholder-player__overline">Testing Placeholder</p>
             <h2 id="placeholder-label"></h2>
             <div class="placeholder-player__progress" aria-hidden="true"><span></span></div>
+          </div>
+
+          <div id="completion-overlay" class="completion-overlay" hidden aria-live="polite">
+            <p id="complete-station" class="eyebrow"></p>
+            <p id="final-text" class="final-text"></p>
+            <p class="completion-hint">You can replay any story below.</p>
           </div>
 
           <p id="media-error" class="media-error" hidden></p>
@@ -62,23 +66,38 @@
           </button>
         </div>
 
-        <div id="choice-panel" class="choice-panel" hidden>
-          <p class="choice-panel__prompt">Choose a story to watch</p>
+        <div id="choice-panel" class="choice-panel">
           <div id="video-choices" class="video-choices"></div>
-        </div>
-      </section>
-
-      <section id="complete-screen" class="screen complete-screen" hidden aria-live="polite">
-        <div class="complete-card">
-          <p id="complete-station" class="eyebrow"></p>
-          <p id="final-text" class="final-text"></p>
-          <p class="complete-hint">Step off the mat when you are ready to finish.</p>
         </div>
       </section>
 
       <aside id="countdown" class="countdown" hidden aria-live="assertive">
         <span class="countdown__label">Resetting in</span>
         <strong id="countdown-number">5</strong>
+      </aside>
+
+      <aside id="secret-menu" class="secret-menu" hidden aria-modal="true" aria-labelledby="secret-menu-title" role="dialog">
+        <div class="secret-menu__card">
+          <button id="secret-menu-close" class="secret-menu__close" type="button" aria-label="Close system menu">×</button>
+          <h2 id="secret-menu-title">System Controls</h2>
+
+          <div class="secret-menu__actions">
+            <button id="secret-reset" class="secret-action secret-action--reset" type="button">Reset experience</button>
+            <button id="secret-choose-persona" class="secret-action" type="button">Choose persona</button>
+            <a class="secret-action" href="{{ url_for('stats_dashboard') }}">View statistics</a>
+          </div>
+
+          <div id="secret-persona-picker" class="secret-persona-picker" hidden>
+            <p>Choose This Screen</p>
+            <div class="secret-persona-picker__buttons">
+              {% for station_id, station in content.stations.items() %}
+                <button type="button" data-secret-station="{{ station_id }}">{{ station.name }}</button>
+              {% endfor %}
+            </div>
+          </div>
+
+          <p id="secret-menu-error" class="secret-menu__error" hidden></p>
+        </div>
       </aside>
     </main>
 

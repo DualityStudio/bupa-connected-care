@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#071f37">
+    <title>Kiosk Statistics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stats.css') }}">
+  </head>
+  <body>
+    <main class="stats-page">
+      <header class="stats-header">
+        <div>
+          <p class="eyebrow">Local Device Data</p>
+          <h1>Daily Statistics</h1>
+        </div>
+        <nav class="stats-actions" aria-label="Statistics actions">
+          <a href="{{ url_for('stats_dashboard') }}">Refresh</a>
+          <a class="stats-actions__primary" href="{{ url_for('index') }}">Back to kiosk</a>
+        </nav>
+      </header>
+
+      {% if errors %}
+        <section class="stats-warning">
+          Could not read: {{ errors | join(', ') }}
+        </section>
+      {% endif %}
+
+      {% if records %}
+        <section class="stats-history">
+          <div>
+            <h2>Saved Days</h2>
+            <p>{{ records | length }} saved {{ 'day' if records | length == 1 else 'days' }} available on this device.</p>
+          </div>
+          <form class="stats-date-form" action="{{ url_for('stats_dashboard') }}" method="get">
+            <label for="stats-date">Choose a Date</label>
+            <div>
+              <select id="stats-date" name="date">
+                {% for record in records %}
+                  <option value="{{ record.date }}" {% if record.date == selected_record.date %}selected{% endif %}>
+                    {{ record.date_display }}
+                  </option>
+                {% endfor %}
+              </select>
+              <button type="submit">View</button>
+            </div>
+          </form>
+        </section>
+
+        <div class="stats-days">
+          {% with record = selected_record %}
+            <article class="stats-day">
+              <header class="stats-day__header">
+                <h2>{{ record.date_display }}</h2>
+                {% if record.updated_at %}<p>Last updated {{ record.updated_at }}</p>{% endif %}
+              </header>
+
+              <div class="headline-stats">
+                <div>
+                  <span>Mat Triggers</span>
+                  <strong>{{ record.pressure_total }}</strong>
+                </div>
+                <div>
+                  <span>Completed Sequences</span>
+                  <strong>{{ record.completion_total }}</strong>
+                </div>
+              </div>
+
+              <section class="stats-section">
+                <h3>By Persona</h3>
+                <div class="stats-table" role="table" aria-label="Persona statistics">
+                  <div class="stats-table__row stats-table__row--heading" role="row">
+                    <span role="columnheader">Persona</span>
+                    <span role="columnheader">Mat Triggers</span>
+                    <span role="columnheader">Completed</span>
+                  </div>
+                  {% for station in record.stations %}
+                    <div class="stats-table__row" role="row">
+                      <strong role="cell">{{ station.name }}</strong>
+                      <span role="cell">{{ station.pressure }}</span>
+                      <span role="cell">{{ station.completions }}</span>
+                    </div>
+                  {% endfor %}
+                </div>
+              </section>
+
+              <section class="stats-section">
+                <h3>Video Plays</h3>
+                <div class="video-stats">
+                  {% for video in record.videos %}
+                    <div class="video-stat">
+                      <div>
+                        <strong>{{ video.name }}</strong>
+                        <span>{{ video.key }}</span>
+                      </div>
+                      <b>{{ video.plays }}</b>
+                    </div>
+                  {% endfor %}
+                </div>
+              </section>
+            </article>
+          {% endwith %}
+        </div>
+      {% else %}
+        <section class="empty-stats">
+          <h2>No Statistics Yet</h2>
+          <p>The first recorded mat trigger or video play will create today’s file.</p>
+        </section>
+      {% endif %}
+    </main>
+  </body>
+</html>

@@ -2,14 +2,15 @@
   "use strict";
 
   const content = JSON.parse(document.getElementById("content-config").textContent);
-  const ACTIVE_SESSION_STATES = new Set(["welcome", "choosing", "playing", "complete"]);
+  const ACTIVE_SESSION_STATES = new Set(["welcome", "ready", "playing", "complete"]);
   const RESET_DELAY_MS = 5000;
   const STATUS_POLL_INTERVAL_MS = 500;
+  const SECRET_TAP_COUNT = 10;
+  const SECRET_TAP_WINDOW_MS = 4000;
 
   const elements = {
     app: document.getElementById("app"),
     connectionBanner: document.getElementById("connection-banner"),
-    adminReset: document.getElementById("admin-reset"),
     setupScreen: document.getElementById("setup-screen"),
     setupTitle: document.getElementById("setup-title"),
     setupCopy: document.getElementById("setup-copy"),
@@ -28,11 +29,18 @@
     autoplayPrompt: document.getElementById("autoplay-prompt"),
     choicePanel: document.getElementById("choice-panel"),
     videoChoices: document.getElementById("video-choices"),
-    completeScreen: document.getElementById("complete-screen"),
+    completionOverlay: document.getElementById("completion-overlay"),
     completeStation: document.getElementById("complete-station"),
     finalText: document.getElementById("final-text"),
     countdown: document.getElementById("countdown"),
     countdownNumber: document.getElementById("countdown-number"),
+    secretMenu: document.getElementById("secret-menu"),
+    secretMenuClose: document.getElementById("secret-menu-close"),
+    secretReset: document.getElementById("secret-reset"),
+    secretChoosePersona: document.getElementById("secret-choose-persona"),
+    secretPersonaPicker: document.getElementById("secret-persona-picker"),
+    secretPersonaButtons: [...document.querySelectorAll("[data-secret-station]")],
+    secretMenuError: document.getElementById("secret-menu-error"),
   };
 
   let state = "booting";
@@ -40,11 +48,14 @@
   let pressureIsPressed = null;
   let watchedVideoIds = new Set();
   let activeVideoId = null;
+  let sequenceCompleted = false;
+  let resumeState = "ready";
   let pollInFlight = false;
   let playbackGeneration = 0;
   let placeholderTimer = null;
   let countdownInterval = null;
   let countdownDeadline = null;
+  let secretTapTimes = [];
 
   function selectedStation() {
     return selectedStationId ? content.stations[selectedStationId] : null;
@@ -80,7 +91,6 @@
   function showOnly(screen) {
     elements.setupScreen.hidden = screen !== "setup";
     elements.experienceScreen.hidden = screen !== "experience";
-    elements.completeScreen.hidden = screen !== "complete";
   }
 
   function setMatIndicator(complete, label) {
@@ -95,10 +105,11 @@
     selectedStationId = null;
     watchedVideoIds.clear();
     activeVideoId = null;
+    sequenceCompleted = false;
+    resumeState = "ready";
     showOnly("setup");
     setAccent("#8ce2d0");
-    elements.adminReset.hidden = true;
-    elements.setupTitle.textContent = "Test the pressure mat";
+    elements.setupTitle.textContent = "Test the Pressure Mat";
     elements.setupCopy.textContent = "Stand on the mat to confirm it is connected and responding.";
     setMatIndicator(false, "Waiting for pressure");
     elements.matTestLink.hidden = false;
@@ -108,8 +119,7 @@
   function showStationSetup() {
     state = "setup-station";
     showOnly("setup");
-    elements.adminReset.hidden = true;
-    elements.setupTitle.textContent = "Pressure mat connected";
+    elements.setupTitle.textContent = "Pressure Mat Connected";
     elements.setupCopy.textContent = "The mat responded correctly. Now choose which story this screen will show.";
     setMatIndicator(true, "Pressure detected — test complete");
     elements.matTestLink.hidden = false;
@@ -117,16 +127,14 @@
   }
 
   function showWaitForRelease() {
-    stopMedia();
     cancelResetCountdown();
     state = "wait-release";
-    showOnly("setup");
-    elements.adminReset.hidden = false;
-    elements.setupTitle.textContent = "Setup complete";
-    elements.setupCopy.textContent = "Step off the pressure mat to arm the experience for the first visitor.";
-    setMatIndicator(true, "Waiting for the mat to be released");
-    elements.matTestLink.hidden = true;
-    elements.stationPicker.hidden = true;
+    watchedVideoIds.clear();
+    activeVideoId = null;
+    sequenceCompleted = false;
+    resumeState = "ready";
+    playIdle();
+    showExperience();
   }
 
   function setStationDisplay() {
@@ -140,43 +148,67 @@
     elements.finalText.textContent = station.finalText;
   }
 
-  function showExperience(showChoices) {
+  function showExperience() {
     showOnly("experience");
-    elements.adminReset.hidden = false;
-    elements.choicePanel.hidden = !showChoices;
     setStationDisplay();
+    renderVideoChoices();
   }
 
-  function startIdle() {
-    cancelResetCountdown();
-    watchedVideoIds.clear();
+  function hideCompletion() {
+    elements.completionOverlay.hidden = true;
+  }
+
+  function playIdle() {
     activeVideoId = null;
-    state = "idle";
-    showExperience(false);
     playMedia(content.idleVideo, { loop: true, analyticsId: "idle" });
   }
 
-  function startWelcome() {
+  function startFreshIdle({ restartVideo = true } = {}) {
+    cancelResetCountdown();
+    watchedVideoIds.clear();
+    activeVideoId = null;
+    sequenceCompleted = false;
+    resumeState = "ready";
+    state = "idle";
+    hideCompletion();
+    if (restartVideo) {
+      playIdle();
+    }
+    showExperience();
+  }
+
+  function startWelcome({ recordTrigger = true } = {}) {
     const station = selectedStation();
     if (!station) {
       showMatSetup();
       return;
     }
 
-    recordStatEvent("pressure_trigger");
+    if (recordTrigger) {
+      recordStatEvent("pressure_trigger");
+    }
     state = "welcome";
-    showExperience(false);
+    activeVideoId = null;
+    hideCompletion();
+    showExperience();
     playMedia(station.welcomeVideo, {
       analyticsId: "welcome",
-      onEnded: showVideoChoices,
+      onEnded: finishWelcome,
     });
   }
 
-  function showVideoChoices() {
-    state = "choosing";
+  function finishWelcome() {
+    state = "ready";
     activeVideoId = null;
-    showExperience(true);
-    renderVideoChoices();
+    playIdle();
+    showExperience();
+  }
+
+  function canChooseVideo() {
+    return Boolean(
+      pressureIsPressed
+      && ["welcome", "ready", "playing", "complete"].includes(state),
+    );
   }
 
   function renderVideoChoices() {
@@ -186,18 +218,26 @@
     }
 
     elements.videoChoices.replaceChildren();
+    const enabled = canChooseVideo();
+    elements.choicePanel.classList.toggle("is-lit", enabled);
 
     station.videos.forEach((video) => {
       const watched = watchedVideoIds.has(video.id);
+      const playing = activeVideoId === video.id;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `video-choice${watched ? " is-watched" : ""}`;
+      button.className = [
+        "video-choice",
+        watched ? "is-watched" : "",
+        playing ? "is-playing" : "",
+      ].filter(Boolean).join(" ");
       button.dataset.videoId = video.id;
+      button.disabled = !enabled || playing;
 
-      if (watched) {
+      if (playing || watched) {
         const marker = document.createElement("span");
         marker.className = "video-choice__check";
-        marker.textContent = "✓ Watched · replay";
+        marker.textContent = playing ? "Playing" : "✓ Watched · replay";
         button.append(marker);
       }
 
@@ -210,9 +250,14 @@
   }
 
   function startSelectedVideo(video) {
+    if (!canChooseVideo() || activeVideoId === video.id) {
+      return;
+    }
+
     state = "playing";
     activeVideoId = video.id;
-    showExperience(false);
+    hideCompletion();
+    showExperience();
     playMedia(video, {
       analyticsId: video.id,
       onEnded: () => finishSelectedVideo(video.id),
@@ -225,20 +270,24 @@
 
     const station = selectedStation();
     if (station && watchedVideoIds.size >= station.videos.length) {
+      if (!sequenceCompleted) {
+        sequenceCompleted = true;
+        recordStatEvent("sequence_complete");
+      }
       showCompletion();
       return;
     }
 
-    showVideoChoices();
+    state = "ready";
+    playIdle();
+    showExperience();
   }
 
   function showCompletion() {
-    stopMedia();
-    recordStatEvent("sequence_complete");
     state = "complete";
-    setStationDisplay();
-    showOnly("complete");
-    elements.adminReset.hidden = false;
+    playIdle();
+    showExperience();
+    elements.completionOverlay.hidden = false;
   }
 
   function animateMediaEntrance() {
@@ -269,6 +318,7 @@
     elements.placeholderPlayer.classList.remove("is-timed", "is-looping");
     elements.mediaError.hidden = true;
     elements.autoplayPrompt.hidden = true;
+    hideCompletion();
   }
 
   function startPlaceholder(media, options, generation, errorMessage = "") {
@@ -362,7 +412,7 @@
   }
 
   function startResetCountdown() {
-    if (countdownInterval !== null || !ACTIVE_SESSION_STATES.has(state)) {
+    if (countdownInterval !== null) {
       return;
     }
 
@@ -373,7 +423,7 @@
       const remaining = Math.max(0, countdownDeadline - Date.now());
       elements.countdownNumber.textContent = String(Math.max(1, Math.ceil(remaining / 1000)));
       if (remaining <= 0) {
-        resetVisitorSession();
+        expireVisitorSession();
       }
     };
 
@@ -395,13 +445,87 @@
     cancelResetCountdown();
     watchedVideoIds.clear();
     activeVideoId = null;
+    sequenceCompleted = false;
+    resumeState = "ready";
 
     if (!selectedStationId) {
       showMatSetup();
     } else if (pressureIsPressed) {
       showWaitForRelease();
     } else {
-      startIdle();
+      startFreshIdle();
+    }
+  }
+
+  function openSecretMenu() {
+    secretTapTimes = [];
+    elements.secretPersonaPicker.hidden = true;
+    elements.secretMenuError.textContent = "";
+    elements.secretMenuError.hidden = true;
+    elements.secretMenu.hidden = false;
+    elements.secretMenuClose.focus();
+  }
+
+  function closeSecretMenu() {
+    elements.secretMenu.hidden = true;
+    elements.secretPersonaPicker.hidden = true;
+    elements.secretMenuError.textContent = "";
+    elements.secretMenuError.hidden = true;
+    secretTapTimes = [];
+  }
+
+  function registerSecretTap(event) {
+    if (!elements.secretMenu.hidden || event.target.closest("button, a")) {
+      return;
+    }
+
+    const now = Date.now();
+    secretTapTimes = secretTapTimes.filter((tapTime) => now - tapTime <= SECRET_TAP_WINDOW_MS);
+    secretTapTimes.push(now);
+
+    if (secretTapTimes.length >= SECRET_TAP_COUNT) {
+      openSecretMenu();
+    }
+  }
+
+  function expireVisitorSession() {
+    cancelResetCountdown();
+    watchedVideoIds.clear();
+    activeVideoId = null;
+    sequenceCompleted = false;
+    resumeState = "ready";
+    state = "idle";
+    hideCompletion();
+    showExperience();
+  }
+
+  function beginStepAway(previousState) {
+    resumeState = previousState === "welcome"
+      ? "welcome"
+      : (sequenceCompleted ? "complete" : "ready");
+    state = "away";
+    activeVideoId = null;
+    hideCompletion();
+
+    if (["welcome", "playing"].includes(previousState)) {
+      playIdle();
+    }
+
+    showExperience();
+    startResetCountdown();
+  }
+
+  function resumeVisitorSession() {
+    cancelResetCountdown();
+    if (resumeState === "welcome") {
+      startWelcome({ recordTrigger: false });
+      return;
+    }
+
+    state = sequenceCompleted ? "complete" : "ready";
+    showExperience();
+    if (sequenceCompleted) {
+      elements.completionOverlay.hidden = false;
     }
   }
 
@@ -412,16 +536,18 @@
     }
 
     if (state === "wait-release" && !currentPressure) {
-      startIdle();
+      state = "idle";
+      showExperience();
       return;
     }
 
-    if (ACTIVE_SESSION_STATES.has(state)) {
-      if (currentPressure) {
-        cancelResetCountdown();
-      } else {
-        startResetCountdown();
-      }
+    if (ACTIVE_SESSION_STATES.has(state) && previousPressure && !currentPressure) {
+      beginStepAway(state);
+      return;
+    }
+
+    if (state === "away" && currentPressure && previousPressure === false) {
+      resumeVisitorSession();
       return;
     }
 
@@ -447,9 +573,9 @@
 
     setStationDisplay();
     if (pressureIsPressed) {
-      showWaitForRelease();
+      startWelcome({ recordTrigger: false });
     } else {
-      startIdle();
+      startFreshIdle();
     }
   }
 
@@ -483,15 +609,17 @@
         pressureIsPressed = Boolean(status.pressed);
         watchedVideoIds.clear();
         activeVideoId = null;
+        sequenceCompleted = false;
+        resumeState = "ready";
 
         if (!selectedStationId) {
           showMatSetup();
         } else if (pressureIsPressed) {
           setStationDisplay();
-          showWaitForRelease();
+          startWelcome({ recordTrigger: false });
         } else {
           setStationDisplay();
-          startIdle();
+          startFreshIdle();
         }
         return;
       }
@@ -506,8 +634,16 @@
     }
   }
 
-  async function selectStation(stationId) {
-    elements.stationButtons.forEach((button) => {
+  async function selectStation(
+    stationId,
+    { recordTrigger = true, closeMenuOnSuccess = false } = {},
+  ) {
+    const stationSelectionButtons = [
+      ...elements.stationButtons,
+      ...elements.secretPersonaButtons,
+    ];
+
+    stationSelectionButtons.forEach((button) => {
       button.disabled = true;
     });
 
@@ -522,18 +658,29 @@
       }
 
       const result = await response.json();
+      stopMedia();
+      cancelResetCountdown();
       selectedStationId = result.selected_station;
+      watchedVideoIds.clear();
+      activeVideoId = null;
+      sequenceCompleted = false;
+      resumeState = "ready";
       setStationDisplay();
       if (pressureIsPressed) {
-        showWaitForRelease();
+        startWelcome({ recordTrigger });
       } else {
-        startIdle();
+        startFreshIdle();
+      }
+      if (closeMenuOnSuccess) {
+        closeSecretMenu();
       }
     } catch (_error) {
       elements.setupCopy.textContent = "The station could not be saved. Check the server connection and try again.";
+      elements.secretMenuError.textContent = "The persona could not be saved. Check the server connection and try again.";
+      elements.secretMenuError.hidden = false;
       setConnected(false);
     } finally {
-      elements.stationButtons.forEach((button) => {
+      stationSelectionButtons.forEach((button) => {
         button.disabled = false;
       });
     }
@@ -542,7 +689,22 @@
   elements.stationButtons.forEach((button) => {
     button.addEventListener("click", () => selectStation(button.dataset.station));
   });
-  elements.adminReset.addEventListener("click", resetVisitorSession);
+  elements.secretPersonaButtons.forEach((button) => {
+    button.addEventListener("click", () => selectStation(
+      button.dataset.secretStation,
+      { recordTrigger: false, closeMenuOnSuccess: true },
+    ));
+  });
+  elements.mediaFrame.addEventListener("pointerup", registerSecretTap);
+  elements.secretMenuClose.addEventListener("click", closeSecretMenu);
+  elements.secretReset.addEventListener("click", () => {
+    closeSecretMenu();
+    resetVisitorSession();
+  });
+  elements.secretChoosePersona.addEventListener("click", () => {
+    elements.secretPersonaPicker.hidden = !elements.secretPersonaPicker.hidden;
+    elements.secretMenuError.hidden = true;
+  });
   elements.autoplayPrompt.addEventListener("click", retryPlaybackAfterTap);
 
   pollStatus();

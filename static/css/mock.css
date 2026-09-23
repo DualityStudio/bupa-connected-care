@@ -51,8 +51,7 @@ a {
   color: var(--cyan);
   font-size: 15px;
   font-weight: 850;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 h1 {
