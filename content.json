@@ -1,17 +1,17 @@
 {
   "appTitle": "Stories that matter",
-  "idleVideo": {
-    "label": "Welcome",
-    "src": "",
-    "placeholderDuration": 8
-  },
   "stations": {
     "maya": {
       "name": "MAYA",
       "accent": "#2fce7c",
+      "idleVideo": {
+        "label": "Maya idle loop",
+        "src": "/static/media/maya/idle.mp4",
+        "placeholderDuration": 8
+      },
       "welcomeVideo": {
         "label": "Welcome to Maya's story",
-        "src": "",
+        "src": "/static/media/maya/welcome.mp4",
         "placeholderDuration": 6
       },
       "videos": [
@@ -19,21 +19,21 @@
           "id": "maya-1",
           "label": "Staying well",
           "icon": "wellness",
-          "src": "",
+          "src": "/static/media/maya/story-1.mp4",
           "placeholderDuration": 7
         },
         {
           "id": "maya-2",
           "label": "Spotting something early",
           "icon": "search",
-          "src": "",
+          "src": "/static/media/maya/story-2.mp4",
           "placeholderDuration": 7
         },
         {
           "id": "maya-3",
           "label": "Guide me",
           "icon": "guide",
-          "src": "",
+          "src": "/static/media/maya/story-3.mp4",
           "placeholderDuration": 7
         }
       ],
@@ -42,9 +42,14 @@
     "mo": {
       "name": "MO",
       "accent": "#f7ab2f",
+      "idleVideo": {
+        "label": "Mo idle loop",
+        "src": "/static/media/mo/idle.mp4",
+        "placeholderDuration": 8
+      },
       "welcomeVideo": {
         "label": "Welcome to Mo's story",
-        "src": "",
+        "src": "/static/media/mo/welcome.mp4",
         "placeholderDuration": 6
       },
       "videos": [
@@ -52,21 +57,21 @@
           "id": "mo-1",
           "label": "Living well",
           "icon": "wellness",
-          "src": "",
+          "src": "/static/media/mo/story-1.mp4",
           "placeholderDuration": 7
         },
         {
           "id": "mo-2",
           "label": "Planned treatment",
           "icon": "calendar",
-          "src": "",
+          "src": "/static/media/mo/story-2.mp4",
           "placeholderDuration": 7
         },
         {
           "id": "mo-3",
           "label": "Urgent care",
           "icon": "urgent",
-          "src": "",
+          "src": "/static/media/mo/story-3.mp4",
           "placeholderDuration": 7
         }
       ],
@@ -75,9 +80,14 @@
     "mary": {
       "name": "MARY",
       "accent": "#a06bff",
+      "idleVideo": {
+        "label": "Mary idle loop",
+        "src": "/static/media/mary/idle.mp4",
+        "placeholderDuration": 8
+      },
       "welcomeVideo": {
         "label": "Welcome to Mary's story",
-        "src": "",
+        "src": "/static/media/mary/welcome.mp4",
         "placeholderDuration": 6
       },
       "videos": [
@@ -85,21 +95,21 @@
           "id": "mary-1",
           "label": "Recover and rehabilitate",
           "icon": "rehab",
-          "src": "",
+          "src": "/static/media/mary/story-1.mp4",
           "placeholderDuration": 7
         },
         {
           "id": "mary-2",
           "label": "Age well",
           "icon": "agewell",
-          "src": "",
+          "src": "/static/media/mary/story-2.mp4",
           "placeholderDuration": 7
         },
         {
           "id": "mary-3",
           "label": "Supported living",
           "icon": "home",
-          "src": "",
+          "src": "/static/media/mary/story-3.mp4",
           "placeholderDuration": 7
         }
       ],

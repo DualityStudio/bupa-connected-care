@@ -5,3 +5,7 @@ __pycache__/
 .idea
 data/stats/*.json
 data/stats/.*.tmp
+static/media/**/*.m4v
+static/media/**/*.mov
+static/media/.transcode-1080/
+media-originals-4k/

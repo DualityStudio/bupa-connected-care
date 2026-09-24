@@ -208,8 +208,13 @@
   }
 
   function playIdle() {
+    const station = selectedStation();
+    if (!station) {
+      return;
+    }
+
     activeVideoId = null;
-    playMedia(content.idleVideo, { loop: true, analyticsId: "idle" });
+    playMedia(station.idleVideo, { loop: true, analyticsId: "idle" });
   }
 
   function startFreshIdle({ restartVideo = true } = {}) {

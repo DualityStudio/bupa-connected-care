@@ -270,12 +270,12 @@ button {
 }
 
 .media-frame.media-enter {
-  animation: media-enter 420ms ease-out;
+  animation: media-enter 220ms ease-out;
 }
 
 @keyframes media-enter {
-  from { opacity: 0.35; transform: scale(0.992); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0.9; }
+  to { opacity: 1; }
 }
 
 #video-player,
@@ -375,7 +375,7 @@ button {
   width: 100%;
   height: clamp(6px, 0.6vw, 10px);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.18);
+  background: transparent;
 }
 
 .media-progress span {
@@ -428,7 +428,7 @@ button {
   bottom: 0;
   left: 0;
   z-index: 6;
-  padding: 0 5.5vw max(42px, env(safe-area-inset-bottom));
+  padding: 0 4.5vw max(120px, env(safe-area-inset-bottom));
   pointer-events: none;
   transition:
     opacity 360ms ease,
@@ -585,7 +585,7 @@ button {
 
 .video-choices {
   align-items: start;
-  gap: clamp(12px, 2vw, 24px);
+  gap: clamp(14px, 2.2vw, 26px);
   pointer-events: auto;
 }
 
@@ -596,7 +596,7 @@ button {
   min-height: 0;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 18px;
   padding: 0;
   overflow: visible;
   border: 0;
@@ -624,7 +624,7 @@ button {
 .video-choice__icon {
   position: relative;
   display: grid;
-  width: clamp(72px, 10.5vw, 112px);
+  width: clamp(84px, 12vw, 128px);
   flex: 0 0 auto;
   aspect-ratio: 1;
   place-items: center;
@@ -659,7 +659,7 @@ button {
 .video-choice__label {
   max-width: 13ch;
   color: currentColor;
-  font-size: clamp(17px, 2.25vw, 27px);
+  font-size: clamp(22px, 2.8vw, 34px);
   font-weight: 780;
   line-height: 1.15;
   letter-spacing: 0.01em;

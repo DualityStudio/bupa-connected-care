@@ -52,7 +52,7 @@ Tap any non-interactive area 10 times within four seconds to open the hidden sys
 
 All labels, placeholder timings, media paths, accent colours, and final text live in [`content.json`](content.json). It contains:
 
-- One shared `idleVideo`.
+- A unique looping `idleVideo` for MAYA, MO, and MARY.
 - A unique `welcomeVideo` for MAYA, MO, and MARY.
 - Three unique `videos` per station.
 - One `finalText` per station.
@@ -68,7 +68,7 @@ Leave a video's `src` empty to use its timed placeholder:
 }
 ```
 
-To use a real file, copy it under `static/media` and set a browser path:
+The application is configured to load five files for each persona from `static/media/<persona>`: `idle.mp4`, `welcome.mp4`, and `story-1.mp4` through `story-3.mp4`. The complete filename-to-story mapping is in [`static/media/README.md`](static/media/README.md). For example:
 
 ```json
 {
@@ -79,7 +79,7 @@ To use a real file, copy it under `static/media` and set a browser path:
 }
 ```
 
-Restart the server after editing `content.json`. Recommended delivery format for the Pi 4 is portrait 1080 × 1920, H.264 video, AAC audio, in an MP4 container.
+The optimised 1080 × 1920 MP4 files are tracked by Git, so application updates install them on each Pi. The separate 4K source backup remains ignored. Restart the server after editing `content.json` or replacing media. Recommended delivery format for the Pi 4 is portrait 1080 × 1920, H.264 video, AAC audio, in an MP4 container.
 
 ## Pressure-mat wiring
 
@@ -107,7 +107,7 @@ The installer:
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
 - Adds a managed kiosk entry to `~/.config/labwc/autostart`.
-- Checks the configured Git remote once per boot and runs a fast-forward-only pull when the remote is reachable. A failed or unavailable update never prevents startup.
+- Checks `origin/main` once per boot and runs a fast-forward-only pull when that branch is reachable. A failed or unavailable update never prevents startup.
 - Waits for the local server, then opens Chromium fullscreen with audible autoplay enabled. Chromium uses its local basic password store so automatic login does not prompt to unlock the desktop keyring.
 - Restarts Chromium after an unexpected failure, while allowing a deliberate `Alt` + `F4` close to remain closed for maintenance.
 
@@ -115,7 +115,7 @@ The station selection is saved under `/run/bupa-screen`. Page refreshes and auto
 
 ### Automatic updates
 
-The update check runs before the server starts. It contacts the repository's existing `origin` remote, which verifies both internet connectivity and Git access more accurately than testing an unrelated website. If the check succeeds, the Pi runs `git pull --ff-only`; otherwise it immediately continues with the installed version. The remote check has a 15-second limit and the pull has a five-minute limit.
+The update check runs before the server starts. It contacts the repository's `origin/main` branch, which verifies both internet connectivity and Git access more accurately than testing an unrelated website. If the check succeeds, the Pi runs `git pull --ff-only origin main`; otherwise it immediately continues with the installed version. Naming the branch explicitly means the updater does not depend on a configured upstream or remote default branch. The remote check has a 15-second limit and the pull has a five-minute limit.
 
 The pull is non-interactive. Private repositories therefore need an SSH key or other credentials that already work without entering a password. Local changes or a branch that cannot be fast-forwarded are left untouched and cause the update to be skipped safely. Details are written to the service journal.
 
@@ -124,7 +124,7 @@ The hidden system controls also provide **Check for Update**. It remains disable
 To enable automatic updates on an already-installed Pi, pull this version and run the installer once more:
 
 ```bash
-git pull --ff-only
+git pull --ff-only origin main
 ./scripts/install-pi.sh
 sudo reboot
 ```
@@ -185,7 +185,7 @@ If a Pi is still running an older version of the launcher that immediately reope
 
 ```bash
 cd /path/to/bupa-screen-project
-git pull --ff-only
+git pull --ff-only origin main
 sudo reboot
 ```
 
@@ -197,7 +197,7 @@ For routine remote maintenance, enable SSH in **Raspberry Pi Configuration → I
 ssh your-username@raspberrypi.local
 ```
 
-From that connection, use `git pull --ff-only` followed by `sudo reboot` to deploy an update, or shut down safely with:
+From that connection, use `git pull --ff-only origin main` followed by `sudo reboot` to deploy an update, or shut down safely with:
 
 ```bash
 sudo poweroff

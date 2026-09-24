@@ -19,6 +19,8 @@ from flask import Flask, jsonify, render_template, request
 BASE_DIR = Path(__file__).resolve().parent
 CONTENT_PATH = BASE_DIR / "content.json"
 GPIO_PIN = 17
+UPDATE_REMOTE = "origin"
+UPDATE_BRANCH = "main"
 STATE_PATH_VALUE = os.environ.get("BUPA_STATE_PATH", "").strip()
 STATE_PATH = Path(STATE_PATH_VALUE) if STATE_PATH_VALUE else None
 STATS_DIR_VALUE = os.environ.get("BUPA_STATS_DIR", "").strip()
@@ -35,6 +37,10 @@ def load_content() -> dict[str, Any]:
         raise ValueError("content.json must define exactly MAYA, MO and MARY")
 
     for station_id, station in stations.items():
+        for media_key in ("idleVideo", "welcomeVideo"):
+            if not isinstance(station.get(media_key), dict):
+                raise ValueError(f"Station {station_id} must define {media_key}")
+
         videos = station.get("videos", [])
         if len(videos) != 3:
             raise ValueError(f"Station {station_id} must define exactly three videos")
@@ -225,7 +231,7 @@ station_ids = tuple(content_config["stations"])
 
 def video_stat_key(station: str, video_id: str) -> str:
     if video_id == "idle":
-        return "idle"
+        return f"{station}.idle"
     if video_id == "welcome":
         return f"{station}.welcome"
     return f"{station}.{video_id}"
@@ -240,7 +246,7 @@ valid_video_ids_by_station = {
     for station_id, station in content_config["stations"].items()
 }
 video_stat_keys = tuple(
-    ["idle"]
+    [f"{station_id}.idle" for station_id in station_ids]
     + [f"{station_id}.welcome" for station_id in station_ids]
     + [
         f"{station_id}.{video['id']}"
@@ -248,8 +254,9 @@ video_stat_keys = tuple(
         for video in station["videos"]
     ]
 )
-video_stat_labels = {"idle": content_config["idleVideo"]["label"]}
+video_stat_labels = {}
 for station_id, station in content_config["stations"].items():
+    video_stat_labels[f"{station_id}.idle"] = station["idleVideo"]["label"]
     video_stat_labels[f"{station_id}.welcome"] = station["welcomeVideo"]["label"]
     for video in station["videos"]:
         video_stat_labels[f"{station_id}.{video['id']}"] = video["label"]
@@ -375,7 +382,10 @@ def update_remote_is_available() -> bool:
         return False
 
     try:
-        result = run_git(["ls-remote", "--exit-code", "origin", "HEAD"], 15)
+        result = run_git(
+            ["ls-remote", "--exit-code", UPDATE_REMOTE, f"refs/heads/{UPDATE_BRANCH}"],
+            15,
+        )
     except (OSError, subprocess.TimeoutExpired):
         return False
     return result.returncode == 0
@@ -441,7 +451,10 @@ def update_application():
 
         try:
             before = run_git(["rev-parse", "HEAD"], 10)
-            pull = run_git(["pull", "--ff-only"], 300)
+            pull = run_git(
+                ["pull", "--ff-only", UPDATE_REMOTE, UPDATE_BRANCH],
+                300,
+            )
             after = run_git(["rev-parse", "HEAD"], 10)
         except (OSError, subprocess.TimeoutExpired) as error:
             app.logger.error("Manual update could not run: %s", error)
