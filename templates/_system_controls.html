@@ -1,0 +1,28 @@
+<aside id="secret-menu" class="secret-menu" hidden aria-modal="true" aria-labelledby="secret-menu-title" role="dialog">
+  <div class="secret-menu__card">
+    <button id="secret-menu-close" class="secret-menu__close" type="button" aria-label="Close system controls">×</button>
+    <h2 id="secret-menu-title">System Controls</h2>
+
+    <div class="secret-menu__actions">
+      <a class="secret-action secret-action--reset" href="{{ url_for('index', reset=1) }}">Reset Experience</a>
+      {% if show_persona %}
+        <button id="secret-choose-persona" class="secret-action" type="button">Choose Persona</button>
+      {% endif %}
+      <a class="secret-action" href="{{ url_for('stats_dashboard') }}">View Statistics</a>
+      <button id="system-update" class="secret-action" type="button" disabled aria-live="polite">Checking Network…</button>
+    </div>
+
+    {% if show_persona %}
+      <div id="secret-persona-picker" class="secret-persona-picker" hidden>
+        <p>Choose This Screen</p>
+        <div class="secret-persona-picker__buttons">
+          {% for station_id, station in content.stations.items() %}
+            <button type="button" data-secret-station="{{ station_id }}">{{ station.name }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <p id="secret-menu-error" class="secret-menu__error" hidden></p>
+    {% endif %}
+  </div>
+</aside>

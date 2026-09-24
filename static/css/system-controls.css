@@ -1,0 +1,134 @@
+.secret-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: max(34px, env(safe-area-inset-top)) 34px max(34px, env(safe-area-inset-bottom));
+  background: rgba(1, 10, 19, 0.86);
+  backdrop-filter: blur(18px);
+}
+
+.secret-menu[hidden] {
+  display: none !important;
+}
+
+.secret-menu__card {
+  position: relative;
+  width: min(100%, 780px);
+  padding: clamp(44px, 7vw, 72px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 38px;
+  background: #071f37;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.52);
+  color: #f8fbff;
+  text-align: center;
+}
+
+.secret-menu__card h2 {
+  margin: 0 0 40px;
+  font-size: clamp(46px, 7vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.secret-menu__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: #f8fbff;
+  font: inherit;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.secret-menu__actions {
+  display: grid;
+  gap: 18px;
+}
+
+.secret-action {
+  display: grid;
+  min-height: 108px;
+  place-items: center;
+  padding: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  background: #102f4a;
+  color: #f8fbff;
+  font: inherit;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.secret-action--reset {
+  border-color: rgba(255, 142, 142, 0.34);
+}
+
+.secret-action:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.secret-action:active:not(:disabled),
+.secret-action:focus-visible,
+.secret-menu__close:active,
+.secret-menu__close:focus-visible,
+.secret-persona-picker button:active,
+.secret-persona-picker button:focus-visible {
+  border-color: var(--station-accent, var(--cyan, #8ce2d0));
+  outline: none;
+  transform: scale(0.98);
+}
+
+.secret-persona-picker {
+  margin-top: 32px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.secret-persona-picker p {
+  margin: 0 0 18px;
+  color: var(--muted, #b5c7d7);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.secret-persona-picker__buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.secret-persona-picker button {
+  min-height: 96px;
+  padding: 18px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  background: rgba(140, 226, 208, 0.1);
+  color: #f8fbff;
+  font: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 850;
+}
+
+.secret-persona-picker button:disabled {
+  opacity: 0.45;
+}
+
+.secret-menu__error {
+  margin: 24px 0 0;
+  font-size: 20px;
+}
+
+.secret-menu__error {
+  color: var(--danger, var(--red, #ff8e8e));
+}
