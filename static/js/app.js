@@ -4,9 +4,19 @@
   const content = JSON.parse(document.getElementById("content-config").textContent);
   const ACTIVE_SESSION_STATES = new Set(["welcome", "ready", "playing", "complete"]);
   const RESET_DELAY_MS = 5000;
+  const OUTCOME_DURATION_MS = 16000;
   const STATUS_POLL_INTERVAL_MS = 500;
-  const SECRET_TAP_COUNT = 10;
-  const SECRET_TAP_WINDOW_MS = 4000;
+  const resetRequested = new URLSearchParams(window.location.search).get("reset") === "1";
+  const BUTTON_ICONS = {
+    wellness: '<path d="M5 12h4l2-6 3 12 2-6h3"></path>',
+    search: '<circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path>',
+    guide: '<circle cx="12" cy="8" r="3.2"></circle><path d="M5 21c0-3.5 3-5 7-5s7 1.5 7 5"></path>',
+    calendar: '<rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path>',
+    urgent: '<circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.4"></path>',
+    rehab: '<path d="M4 18h16M7 18V9M17 18V9M12 18V6"></path>',
+    agewell: '<path d="M12 21s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 12c0 4.6-7 9-7 9z"></path>',
+    home: '<path d="M4 11l8-6 8 6M6 10v9h12v-9"></path>',
+  };
 
   const elements = {
     app: document.getElementById("app"),
@@ -16,27 +26,26 @@
     setupCopy: document.getElementById("setup-copy"),
     matIndicator: document.getElementById("mat-indicator"),
     matIndicatorText: document.getElementById("mat-indicator-text"),
-    matTestLink: document.getElementById("mat-test-link"),
     stationPicker: document.getElementById("station-picker"),
     stationButtons: [...document.querySelectorAll("[data-station]")],
-    modeLabel: document.getElementById("mode-label"),
     experienceScreen: document.getElementById("experience-screen"),
     mediaFrame: document.getElementById("media-frame"),
     videoPlayer: document.getElementById("video-player"),
     placeholderPlayer: document.getElementById("placeholder-player"),
     placeholderLabel: document.getElementById("placeholder-label"),
+    mediaProgress: document.getElementById("media-progress"),
+    mediaProgressFill: document.querySelector("#media-progress span"),
     mediaError: document.getElementById("media-error"),
     autoplayPrompt: document.getElementById("autoplay-prompt"),
     choicePanel: document.getElementById("choice-panel"),
     videoChoices: document.getElementById("video-choices"),
+    matPrompt: document.getElementById("mat-prompt"),
+    touchHint: document.getElementById("touch-hint"),
+    touchHintText: document.getElementById("touch-hint-text"),
     completionOverlay: document.getElementById("completion-overlay"),
-    completeStation: document.getElementById("complete-station"),
     finalText: document.getElementById("final-text"),
     countdown: document.getElementById("countdown"),
     countdownNumber: document.getElementById("countdown-number"),
-    secretMenu: document.getElementById("secret-menu"),
-    secretMenuClose: document.getElementById("secret-menu-close"),
-    secretReset: document.getElementById("secret-reset"),
     secretChoosePersona: document.getElementById("secret-choose-persona"),
     secretPersonaPicker: document.getElementById("secret-persona-picker"),
     secretPersonaButtons: [...document.querySelectorAll("[data-secret-station]")],
@@ -53,9 +62,10 @@
   let pollInFlight = false;
   let playbackGeneration = 0;
   let placeholderTimer = null;
+  let progressAnimationFrame = null;
+  let completionTimer = null;
   let countdownInterval = null;
   let countdownDeadline = null;
-  let secretTapTimes = [];
 
   function selectedStation() {
     return selectedStationId ? content.stations[selectedStationId] : null;
@@ -112,7 +122,6 @@
     elements.setupTitle.textContent = "Test the Pressure Mat";
     elements.setupCopy.textContent = "Stand on the mat to confirm it is connected and responding.";
     setMatIndicator(false, "Waiting for pressure");
-    elements.matTestLink.hidden = false;
     elements.stationPicker.hidden = true;
   }
 
@@ -122,7 +131,6 @@
     elements.setupTitle.textContent = "Pressure Mat Connected";
     elements.setupCopy.textContent = "The mat responded correctly. Now choose which story this screen will show.";
     setMatIndicator(true, "Pressure detected — test complete");
-    elements.matTestLink.hidden = false;
     elements.stationPicker.hidden = false;
   }
 
@@ -144,7 +152,6 @@
     }
 
     setAccent(station.accent);
-    elements.completeStation.textContent = station.name;
     elements.finalText.textContent = station.finalText;
   }
 
@@ -155,7 +162,49 @@
   }
 
   function hideCompletion() {
-    elements.completionOverlay.hidden = true;
+    if (completionTimer !== null) {
+      window.clearTimeout(completionTimer);
+      completionTimer = null;
+    }
+
+    elements.completionOverlay.classList.remove("is-visible");
+    elements.completionOverlay.setAttribute("aria-hidden", "true");
+    elements.choicePanel.classList.remove("is-outcome");
+  }
+
+  function revealCompletion() {
+    elements.completionOverlay.classList.add("is-visible");
+    elements.completionOverlay.setAttribute("aria-hidden", "false");
+    elements.choicePanel.classList.add("is-outcome");
+    startPlaceholderProgress(OUTCOME_DURATION_MS / 1000);
+    completionTimer = window.setTimeout(finishCompletion, OUTCOME_DURATION_MS);
+  }
+
+  function finishCompletion() {
+    if (state !== "complete") {
+      return;
+    }
+
+    completionTimer = null;
+    watchedVideoIds.clear();
+    activeVideoId = null;
+    sequenceCompleted = false;
+    resumeState = "ready";
+    state = pressureIsPressed ? "wait-release" : "idle";
+    hideCompletion();
+    playIdle();
+    showExperience();
+  }
+
+  function dismissCompletion() {
+    if (state !== "complete") {
+      return;
+    }
+
+    state = "ready";
+    hideCompletion();
+    playIdle();
+    showExperience();
   }
 
   function playIdle() {
@@ -211,41 +260,71 @@
     );
   }
 
+  function storyName(station) {
+    const name = station.name.toLocaleLowerCase();
+    return `${name.charAt(0).toLocaleUpperCase()}${name.slice(1)}`;
+  }
+
+  function createVideoIcon(iconName) {
+    const icon = document.createElement("span");
+    icon.className = "video-choice__icon";
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.innerHTML = BUTTON_ICONS[iconName] || BUTTON_ICONS.guide;
+    icon.append(svg);
+    return icon;
+  }
+
   function renderVideoChoices() {
     const station = selectedStation();
     if (!station) {
       return;
     }
 
-    elements.videoChoices.replaceChildren();
     const enabled = canChooseVideo();
+    const showTouchHint = enabled && !["playing", "complete"].includes(state);
     elements.choicePanel.classList.toggle("is-lit", enabled);
+    const showMatPrompt = pressureIsPressed === false || state === "wait-release";
+    elements.matPrompt.classList.toggle("is-visible", showMatPrompt);
+    elements.matPrompt.setAttribute("aria-hidden", String(!showMatPrompt));
+    elements.touchHint.classList.toggle("is-visible", showTouchHint);
+    elements.touchHint.setAttribute("aria-hidden", String(!showTouchHint));
+    elements.touchHintText.textContent = `Tap the buttons to hear ${storyName(station)}'s story`;
 
-    station.videos.forEach((video) => {
+    if (elements.videoChoices.dataset.stationId !== selectedStationId) {
+      elements.videoChoices.replaceChildren();
+      elements.videoChoices.dataset.stationId = selectedStationId;
+
+      station.videos.forEach((video) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "video-choice";
+        button.dataset.videoId = video.id;
+        button.append(createVideoIcon(video.icon));
+
+        const label = document.createElement("span");
+        label.className = "video-choice__label";
+        label.textContent = video.label;
+        button.append(label);
+
+        button.addEventListener("click", () => startSelectedVideo(video));
+        elements.videoChoices.append(button);
+      });
+    }
+
+    station.videos.forEach((video, index) => {
       const watched = watchedVideoIds.has(video.id);
       const playing = activeVideoId === video.id;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = [
-        "video-choice",
-        watched ? "is-watched" : "",
-        playing ? "is-playing" : "",
-      ].filter(Boolean).join(" ");
-      button.dataset.videoId = video.id;
+      const button = elements.videoChoices.children[index];
+      button.classList.toggle("is-watched", watched);
+      button.classList.toggle("is-playing", playing);
       button.disabled = !enabled || playing;
-
-      if (playing || watched) {
-        const marker = document.createElement("span");
-        marker.className = "video-choice__check";
-        marker.textContent = playing ? "Playing" : "✓ Watched · replay";
-        button.append(marker);
-      }
-
-      const label = document.createElement("span");
-      label.textContent = video.label;
-      button.append(label);
-      button.addEventListener("click", () => startSelectedVideo(video));
-      elements.videoChoices.append(button);
     });
   }
 
@@ -287,7 +366,7 @@
     state = "complete";
     playIdle();
     showExperience();
-    elements.completionOverlay.hidden = false;
+    revealCompletion();
   }
 
   function animateMediaEntrance() {
@@ -306,6 +385,48 @@
     video.hidden = true;
   }
 
+  function hideMediaProgress() {
+    if (progressAnimationFrame !== null) {
+      window.cancelAnimationFrame(progressAnimationFrame);
+      progressAnimationFrame = null;
+    }
+
+    elements.mediaProgress.hidden = true;
+    elements.mediaProgress.classList.remove("is-timed", "is-video");
+    elements.mediaProgressFill.style.removeProperty("transform");
+    elements.mediaProgress.style.removeProperty("--media-duration");
+  }
+
+  function startPlaceholderProgress(durationSeconds) {
+    hideMediaProgress();
+    elements.mediaProgress.style.setProperty("--media-duration", `${durationSeconds}s`);
+    elements.mediaProgress.hidden = false;
+    void elements.mediaProgress.offsetWidth;
+    elements.mediaProgress.classList.add("is-timed");
+  }
+
+  function startVideoProgress(generation) {
+    hideMediaProgress();
+    elements.mediaProgress.hidden = false;
+    elements.mediaProgress.classList.add("is-video");
+
+    const update = () => {
+      if (generation !== playbackGeneration) {
+        progressAnimationFrame = null;
+        return;
+      }
+
+      const duration = elements.videoPlayer.duration;
+      const progress = Number.isFinite(duration) && duration > 0
+        ? Math.min(1, Math.max(0, elements.videoPlayer.currentTime / duration))
+        : 0;
+      elements.mediaProgressFill.style.transform = `scaleX(${progress})`;
+      progressAnimationFrame = window.requestAnimationFrame(update);
+    };
+
+    progressAnimationFrame = window.requestAnimationFrame(update);
+  }
+
   function stopMedia() {
     playbackGeneration += 1;
     if (placeholderTimer !== null) {
@@ -314,6 +435,7 @@
     }
 
     resetVideoElement();
+    hideMediaProgress();
     elements.placeholderPlayer.hidden = true;
     elements.placeholderPlayer.classList.remove("is-timed", "is-looping");
     elements.mediaError.hidden = true;
@@ -339,6 +461,11 @@
     placeholder.hidden = false;
     void placeholder.offsetWidth;
     placeholder.classList.add(options.loop ? "is-looping" : "is-timed");
+    if (options.loop) {
+      hideMediaProgress();
+    } else {
+      startPlaceholderProgress(durationSeconds);
+    }
 
     if (errorMessage) {
       elements.mediaError.textContent = errorMessage;
@@ -376,6 +503,11 @@
     video.volume = 1;
     video.src = media.src;
     video.currentTime = 0;
+    if (options.loop) {
+      hideMediaProgress();
+    } else {
+      startVideoProgress(generation);
+    }
 
     video.onended = () => {
       if (generation === playbackGeneration && typeof options.onEnded === "function") {
@@ -457,37 +589,6 @@
     }
   }
 
-  function openSecretMenu() {
-    secretTapTimes = [];
-    elements.secretPersonaPicker.hidden = true;
-    elements.secretMenuError.textContent = "";
-    elements.secretMenuError.hidden = true;
-    elements.secretMenu.hidden = false;
-    elements.secretMenuClose.focus();
-  }
-
-  function closeSecretMenu() {
-    elements.secretMenu.hidden = true;
-    elements.secretPersonaPicker.hidden = true;
-    elements.secretMenuError.textContent = "";
-    elements.secretMenuError.hidden = true;
-    secretTapTimes = [];
-  }
-
-  function registerSecretTap(event) {
-    if (!elements.secretMenu.hidden || event.target.closest("button, a")) {
-      return;
-    }
-
-    const now = Date.now();
-    secretTapTimes = secretTapTimes.filter((tapTime) => now - tapTime <= SECRET_TAP_WINDOW_MS);
-    secretTapTimes.push(now);
-
-    if (secretTapTimes.length >= SECRET_TAP_COUNT) {
-      openSecretMenu();
-    }
-  }
-
   function expireVisitorSession() {
     cancelResetCountdown();
     watchedVideoIds.clear();
@@ -502,7 +603,7 @@
   function beginStepAway(previousState) {
     resumeState = previousState === "welcome"
       ? "welcome"
-      : (sequenceCompleted ? "complete" : "ready");
+      : (previousState === "complete" ? "complete" : "ready");
     state = "away";
     activeVideoId = null;
     hideCompletion();
@@ -525,7 +626,7 @@
     state = sequenceCompleted ? "complete" : "ready";
     showExperience();
     if (sequenceCompleted) {
-      elements.completionOverlay.hidden = false;
+      revealCompletion();
     }
   }
 
@@ -559,9 +660,11 @@
   function initialiseFromStatus(status) {
     selectedStationId = status.selected_station;
     pressureIsPressed = Boolean(status.pressed);
-    elements.modeLabel.textContent = status.mode === "mock"
-      ? "Mock input mode · use /mock to control the mat"
-      : "Physical input · BCM GPIO 17";
+    if (resetRequested) {
+      resetVisitorSession();
+      window.history.replaceState(null, "", window.location.pathname);
+      return;
+    }
 
     if (!selectedStationId) {
       showMatSetup();
@@ -593,10 +696,6 @@
 
       const status = await response.json();
       setConnected(true);
-      elements.modeLabel.textContent = status.mode === "mock"
-        ? "Mock input mode · use /mock to control the mat"
-        : "Physical input · BCM GPIO 17";
-
       if (state === "booting") {
         initialiseFromStatus(status);
         return;
@@ -672,7 +771,7 @@
         startFreshIdle();
       }
       if (closeMenuOnSuccess) {
-        closeSecretMenu();
+        window.bupaSystemControls?.close();
       }
     } catch (_error) {
       elements.setupCopy.textContent = "The station could not be saved. Check the server connection and try again.";
@@ -695,16 +794,11 @@
       { recordTrigger: false, closeMenuOnSuccess: true },
     ));
   });
-  elements.mediaFrame.addEventListener("pointerup", registerSecretTap);
-  elements.secretMenuClose.addEventListener("click", closeSecretMenu);
-  elements.secretReset.addEventListener("click", () => {
-    closeSecretMenu();
-    resetVisitorSession();
-  });
   elements.secretChoosePersona.addEventListener("click", () => {
     elements.secretPersonaPicker.hidden = !elements.secretPersonaPicker.hidden;
     elements.secretMenuError.hidden = true;
   });
+  elements.completionOverlay.addEventListener("click", dismissCompletion);
   elements.autoplayPrompt.addEventListener("click", retryPlaybackAfterTap);
 
   pollStatus();

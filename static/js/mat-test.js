@@ -37,7 +37,7 @@
 
       elements.connectionBanner.hidden = true;
       elements.modeLabel.textContent = status.mode === "mock"
-        ? "Mock input mode · use /mock to control the mat"
+        ? "Mock input mode · use /mat-controller to control the mat"
         : "Physical input · BCM GPIO 17";
 
       if (previousPressure === false && pressed) {

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#071f37">
     <title>Pressure Mat Controller</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mock.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/system-controls.css') }}">
   </head>
   <body>
     <main class="controller">
@@ -19,7 +21,7 @@
 
       <section class="status-card" aria-live="polite">
         <div id="connection-state" class="connection-state connection-state--waiting">Connecting…</div>
-        <p class="status-card__label">Simulated mat state</p>
+        <p class="status-card__label">Kiosk mat state</p>
         <p id="pressure-state" class="pressure-state">Released</p>
         <p id="station-state" class="station-state">Station: not selected</p>
       </section>
@@ -36,10 +38,14 @@
       </section>
 
       <p id="controller-message" class="controller-message">
-        The setting stays latched until you press the other button or restart the server.
+        Manual pressure stays latched until you press the other button or restart the server.
       </p>
+
+      {% set show_persona = false %}
+      {% include "_system_controls.html" %}
     </main>
 
+    <script src="{{ url_for('static', filename='js/system-controls.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/mock.js') }}" defer></script>
   </body>
 </html>

@@ -24,24 +24,26 @@
   function renderStatus(status) {
     currentMode = status.mode;
     const pressed = Boolean(status.pressed);
-    const mockEnabled = status.mode === "mock";
+    const controllerPressed = Boolean(status.controller_pressed);
 
-    setConnection("connected", mockEnabled ? "Connected · mock mode" : "Connected · real GPIO mode");
+    setConnection("connected", status.mode === "mock"
+      ? "Connected · controller input mode"
+      : "Connected · physical GPIO and controller input");
     elements.pressure.textContent = pressed ? "Pressed" : "Released";
     elements.pressure.classList.toggle("is-pressed", pressed);
     elements.station.textContent = status.selected_station
       ? `Station: ${status.selected_station.toUpperCase()}`
       : "Station: not selected";
 
-    elements.pressButton.disabled = !mockEnabled || updateInFlight;
-    elements.releaseButton.disabled = !mockEnabled || updateInFlight;
-    elements.pressButton.classList.toggle("is-active", mockEnabled && pressed);
-    elements.releaseButton.classList.toggle("is-active", mockEnabled && !pressed);
+    elements.pressButton.disabled = updateInFlight;
+    elements.releaseButton.disabled = updateInFlight;
+    elements.pressButton.classList.toggle("is-active", controllerPressed);
+    elements.releaseButton.classList.toggle("is-active", !controllerPressed);
 
-    elements.message.classList.toggle("is-error", !mockEnabled);
-    elements.message.textContent = mockEnabled
-      ? "The setting stays latched until you press the other button or restart the server."
-      : "This server is using the physical GPIO 17 pressure mat. Mock controls are disabled.";
+    elements.message.classList.remove("is-error");
+    elements.message.textContent = status.mode === "mock"
+      ? "Manual pressure stays latched until you press the other button or restart the server."
+      : "These controls work alongside the physical GPIO 17 mat. Releasing here does not override a physically pressed mat.";
   }
 
   async function pollStatus() {
@@ -69,7 +71,7 @@
   }
 
   async function setPressure(pressed) {
-    if (updateInFlight || currentMode !== "mock") {
+    if (updateInFlight || currentMode === null) {
       return;
     }
     updateInFlight = true;
@@ -77,7 +79,7 @@
     elements.releaseButton.disabled = true;
 
     try {
-      const response = await fetch("/api/mock-pressure", {
+      const response = await fetch("/api/controller-pressure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pressed }),

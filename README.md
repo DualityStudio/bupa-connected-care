@@ -5,7 +5,7 @@ A local Flask application for a Raspberry Pi 4, portrait touchscreen, and pressu
 - Boot-time mat testing and MAYA/MO/MARY station selection.
 - A shared idle loop, station welcome video, three watched/replayable stories, and final text.
 - Five-second step-away reset and a hidden 10-tap system menu.
-- A separate mock controller that can be loaded on a phone or second computer.
+- A separate mat controller that can be loaded on a phone or second computer in either GPIO mode.
 - Timed animated placeholders, so the complete interaction works before the videos arrive.
 
 ## Try it without a Raspberry Pi
@@ -27,25 +27,26 @@ BUPA_GPIO_MODE=mock python3 app.py
 Open these two pages:
 
 - Visitor screen: [http://localhost:5000](http://localhost:5000)
-- Pressure controller: [http://localhost:5000/mock](http://localhost:5000/mock)
+- Pressure controller: [http://localhost:5000/mat-controller](http://localhost:5000/mat-controller)
 
-The controller has separate **Stand on mat** and **Step off mat** buttons. Its state stays latched, just like remaining on or leaving a physical pressure mat.
+The controller has separate **Stand on mat** and **Step off mat** buttons. Its state stays latched, just like remaining on or leaving a physical pressure mat. On a Pi in real GPIO mode, controller pressure works alongside the physical mat; releasing the controller does not override a physically pressed mat.
 
-The initial setup screen also links to a repeated press test at `/mat-test`. This page counts each released-to-pressed transition, shows the live mat state, and provides a reset button. Its temporary count is not included in the daily visitor statistics.
+The repeated press test remains available directly at `/mat-test`. This page counts each released-to-pressed transition, shows the live mat state, and provides a reset button. Its temporary count is not included in the daily visitor statistics.
 
-To control the experience from another device on the same network, replace `localhost` with the server computer's IP address or hostname. For example: `http://raspberrypi.local:5000/mock`.
+To control the experience from another device on the same network, replace `localhost` with the server computer's IP address or hostname. For example: `http://raspberrypi.local:5000/mat-controller`.
 
 ## Visitor flow
 
 1. Use the mat once to pass the setup test.
 2. Select MAYA, MO, or MARY.
-3. If the mat is still pressed when the persona is selected, its welcome video starts immediately and the story buttons light up. Otherwise, the shared idle video loops with the buttons dimmed until someone stands on the mat.
+3. If the mat is still pressed when the persona is selected, its welcome video starts immediately, the story buttons light up, and a touch prompt appears above them. Otherwise, the shared idle video loops with the buttons dimmed and a prompt asks the visitor to step on the spot.
 4. A fresh press plays the selected station's welcome video. The buttons remain available, and when the welcome finishes the idle video starts again.
 5. Watch the three stories in any order. Buttons remain visible during playback, another story can be selected at any time, and watched stories remain available for replay.
-6. Each completed story returns to the idle loop. After all three distinct stories finish, the station's final text appears over that loop while the replay buttons remain available.
-7. Leaving the mat switches an active welcome or story back to the idle loop and dims the buttons. Returning during the five-second countdown restores the session; expiry clears watched progress while the idle video continues.
+6. Each completed story returns to the idle loop and removes its progress bar. After all three distinct stories finish, the buttons fade away and the station's Connected Care Outcome appears for 16 seconds with a persona-coloured progress bar before returning to the start automatically. Tapping the outcome dismisses it early and returns to the idle loop with the active buttons and watched markers preserved; stepping off then starts the normal five-second timeout.
+7. Returning from the outcome enters a lights-out start state. If the previous visitor is still on the mat, stepping off quietly re-arms it without showing the five-second countdown; the next fresh press starts the introduction.
+8. Leaving the mat during an active welcome or story switches back to the idle loop, dims the transparent overlaid buttons, and displays **Step on the spot for the introduction**. Returning during the five-second countdown restores the session; expiry clears watched progress while the idle video continues.
 
-Tap the video area 10 times within four seconds to open the hidden system menu. Taps on the story buttons do not count. The menu can reset the visitor experience, change the persona, or open the statistics page. Resetting does not change the selected persona.
+Tap any non-interactive area 10 times within four seconds to open the hidden system controls on the kiosk, mat controller, repeated press test, or statistics page. Taps on buttons, links, and form fields do not count. Every page can reset the experience, open statistics, and check for an application update; persona selection appears only on the visitor kiosk. Resetting does not change the selected persona.
 
 ## Edit the content
 
@@ -60,7 +61,8 @@ Leave a video's `src` empty to use its timed placeholder:
 
 ```json
 {
-  "label": "Maya · Story 1",
+  "label": "Staying well",
+  "icon": "wellness",
   "src": "",
   "placeholderDuration": 7
 }
@@ -70,7 +72,8 @@ To use a real file, copy it under `static/media` and set a browser path:
 
 ```json
 {
-  "label": "Maya · Story 1",
+  "label": "Staying well",
+  "icon": "wellness",
   "src": "/static/media/maya/story-1.mp4",
   "placeholderDuration": 7
 }
@@ -99,7 +102,7 @@ sudo reboot
 
 The installer:
 
-- Installs Flask, Waitress, GPIO Zero, Chromium, curl, and Git from Raspberry Pi OS packages.
+- Installs Flask, Waitress, GPIO Zero, Chromium, curl, and Git from Raspberry Pi OS packages. Montserrat is bundled with the application so the kiosk typography works without internet access.
 - Grants the kiosk user GPIO access.
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
@@ -115,6 +118,8 @@ The station selection is saved under `/run/bupa-screen`. Page refreshes and auto
 The update check runs before the server starts. It contacts the repository's existing `origin` remote, which verifies both internet connectivity and Git access more accurately than testing an unrelated website. If the check succeeds, the Pi runs `git pull --ff-only`; otherwise it immediately continues with the installed version. The remote check has a 15-second limit and the pull has a five-minute limit.
 
 The pull is non-interactive. Private repositories therefore need an SSH key or other credentials that already work without entering a password. Local changes or a branch that cannot be fast-forwarded are left untouched and cause the update to be skipped safely. Details are written to the service journal.
+
+The hidden system controls also provide **Check for Update**. It remains disabled unless the Pi can reach and authenticate with the configured Git remote. A successful update restarts the system service automatically; when running the development server directly, restart it manually to load the new Python code.
 
 To enable automatic updates on an already-installed Pi, pull this version and run the installer once more:
 
@@ -230,7 +235,7 @@ sudo systemctl stop bupa-screen.service
 BUPA_GPIO_MODE=mock python3 app.py
 ```
 
-The mock controller is intentionally unavailable in real GPIO mode. If the physical GPIO cannot initialise, the server exits with a clear error instead of silently simulating a working mat.
+The `/mat-controller` page remains available in real GPIO mode and works alongside the physical pressure mat. If the physical GPIO cannot initialise during server startup, the server still exits with a clear error rather than silently replacing the configured hardware input.
 
 ## Remove the boot setup
 

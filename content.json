@@ -8,7 +8,7 @@
   "stations": {
     "maya": {
       "name": "MAYA",
-      "accent": "#8ce2d0",
+      "accent": "#2fce7c",
       "welcomeVideo": {
         "label": "Welcome to Maya's story",
         "src": "",
@@ -17,28 +17,31 @@
       "videos": [
         {
           "id": "maya-1",
-          "label": "Maya · Story 1",
+          "label": "Staying well",
+          "icon": "wellness",
           "src": "",
           "placeholderDuration": 7
         },
         {
           "id": "maya-2",
-          "label": "Maya · Story 2",
+          "label": "Spotting something early",
+          "icon": "search",
           "src": "",
           "placeholderDuration": 7
         },
         {
           "id": "maya-3",
-          "label": "Maya · Story 3",
+          "label": "Guide me",
+          "icon": "guide",
           "src": "",
           "placeholderDuration": 7
         }
       ],
-      "finalText": "Thank you for spending time with Maya. Every story helps us understand what matters most."
+      "finalText": "What began as a small concern about a changing mole became an example of how connected, personalised care can make healthcare simpler and more accessible. By combining wellness monitoring, digital symptom assessment and specialist access, Bupa helped Maya get the right support at the right time — giving her confidence and peace of mind throughout her journey."
     },
     "mo": {
       "name": "MO",
-      "accent": "#ffd27c",
+      "accent": "#f7ab2f",
       "welcomeVideo": {
         "label": "Welcome to Mo's story",
         "src": "",
@@ -47,28 +50,31 @@
       "videos": [
         {
           "id": "mo-1",
-          "label": "Mo · Story 1",
+          "label": "Living well",
+          "icon": "wellness",
           "src": "",
           "placeholderDuration": 7
         },
         {
           "id": "mo-2",
-          "label": "Mo · Story 2",
+          "label": "Planned treatment",
+          "icon": "calendar",
           "src": "",
           "placeholderDuration": 7
         },
         {
           "id": "mo-3",
-          "label": "Mo · Story 3",
+          "label": "Urgent care",
+          "icon": "urgent",
           "src": "",
           "placeholderDuration": 7
         }
       ],
-      "finalText": "Thank you for spending time with Mo. Listening with care can make a meaningful difference."
+      "finalText": "From prevention and lifestyle support to surgery and emergency care, Bupa's connected care approach helps Mo manage his diabetes with confidence — while ensuring every healthcare professional involved has the information they need to deliver the right care at the right time."
     },
     "mary": {
       "name": "MARY",
-      "accent": "#f2a8c1",
+      "accent": "#a06bff",
       "welcomeVideo": {
         "label": "Welcome to Mary's story",
         "src": "",
@@ -77,24 +83,27 @@
       "videos": [
         {
           "id": "mary-1",
-          "label": "Mary · Story 1",
+          "label": "Recover and rehabilitate",
+          "icon": "rehab",
           "src": "",
           "placeholderDuration": 7
         },
         {
           "id": "mary-2",
-          "label": "Mary · Story 2",
+          "label": "Age well",
+          "icon": "agewell",
           "src": "",
           "placeholderDuration": 7
         },
         {
           "id": "mary-3",
-          "label": "Mary · Story 3",
+          "label": "Supported living",
+          "icon": "home",
           "src": "",
           "placeholderDuration": 7
         }
       ],
-      "finalText": "Thank you for spending time with Mary. Sharing experiences helps every person feel seen and heard."
+      "finalText": "What began as a simple fall became an opportunity to better understand Mary's health and access truly personalised care. By combining preventative health assessments, personalised treatment selection, digital rehabilitation, proactive monitoring and coordinated follow-up care, Bupa helps Mary stay active, independent and connected to the things that matter most."
     }
   }
 }

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#071f37">
     <title>Pressure Mat Test</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/system-controls.css') }}">
   </head>
   <body>
     <main class="app-shell">
@@ -37,8 +39,12 @@
           <p id="mode-label" class="mode-label">Checking input…</p>
         </div>
       </section>
+
+      {% set show_persona = false %}
+      {% include "_system_controls.html" %}
     </main>
 
+    <script src="{{ url_for('static', filename='js/system-controls.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/mat-test.js') }}" defer></script>
   </body>
 </html>

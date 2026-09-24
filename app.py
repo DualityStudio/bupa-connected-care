@@ -6,9 +6,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import signal
+import subprocess
 from datetime import datetime
 from pathlib import Path
-from threading import Lock
+from threading import Lock, Timer
 from typing import Any
 
 from flask import Flask, jsonify, render_template, request
@@ -211,8 +213,12 @@ app = Flask(__name__)
 logging.getLogger("werkzeug").setLevel(logging.ERROR)
 content_config = load_content()
 pressure_input = create_pressure_input()
+controller_pressure_input = (
+    pressure_input if isinstance(pressure_input, MockPressureInput) else MockPressureInput()
+)
 runtime_lock = Lock()
 stats_lock = Lock()
+update_lock = Lock()
 selected_station = load_selected_station(content_config["stations"])
 station_ids = tuple(content_config["stations"])
 
@@ -339,13 +345,53 @@ def load_stats_history() -> tuple[list[dict[str, Any]], list[str]]:
     return records, errors
 
 
+def pressure_is_pressed() -> bool:
+    if controller_pressure_input.is_pressed:
+        return True
+    return pressure_input.is_pressed
+
+
+def git_environment() -> dict[str, str]:
+    environment = os.environ.copy()
+    environment["GIT_TERMINAL_PROMPT"] = "0"
+    environment.setdefault("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")
+    return environment
+
+
+def run_git(arguments: list[str], timeout_seconds: int) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *arguments],
+        cwd=BASE_DIR,
+        env=git_environment(),
+        capture_output=True,
+        text=True,
+        timeout=timeout_seconds,
+        check=False,
+    )
+
+
+def update_remote_is_available() -> bool:
+    if not (BASE_DIR / ".git").exists():
+        return False
+
+    try:
+        result = run_git(["ls-remote", "--exit-code", "origin", "HEAD"], 15)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+def restart_after_update() -> None:
+    os.kill(os.getpid(), signal.SIGTERM)
+
+
 @app.get("/")
 def index():
     return render_template("index.html", content=content_config)
 
 
-@app.get("/mock")
-def mock_controller():
+@app.get("/mat-controller")
+def mat_controller():
     return render_template("mock.html")
 
 
@@ -376,10 +422,56 @@ def health():
     return jsonify({"ok": True, "mode": pressure_input.mode})
 
 
+@app.get("/api/update-status")
+def update_status():
+    available = update_remote_is_available()
+    response = jsonify({"available": available})
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.post("/api/update")
+def update_application():
+    if not update_lock.acquire(blocking=False):
+        return jsonify({"error": "An update is already running"}), 409
+
+    try:
+        if not update_remote_is_available():
+            return jsonify({"error": "The update server is not reachable"}), 503
+
+        try:
+            before = run_git(["rev-parse", "HEAD"], 10)
+            pull = run_git(["pull", "--ff-only"], 300)
+            after = run_git(["rev-parse", "HEAD"], 10)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            app.logger.error("Manual update could not run: %s", error)
+            return jsonify({"error": "The update could not be completed"}), 500
+
+        if before.returncode != 0 or pull.returncode != 0 or after.returncode != 0:
+            app.logger.error("Manual update failed: %s", pull.stderr.strip())
+            return jsonify({"error": "The update could not be applied safely"}), 500
+
+        updated = before.stdout.strip() != after.stdout.strip()
+        restart_scheduled = updated and bool(os.environ.get("INVOCATION_ID"))
+        if restart_scheduled:
+            restart_timer = Timer(1.0, restart_after_update)
+            restart_timer.daemon = True
+            restart_timer.start()
+
+        return jsonify(
+            {
+                "updated": updated,
+                "restart_scheduled": restart_scheduled,
+            }
+        )
+    finally:
+        update_lock.release()
+
+
 @app.get("/api/status")
 def pressure_status():
     try:
-        pressed = pressure_input.is_pressed
+        pressed = pressure_is_pressed()
     except Exception as error:
         return (
             jsonify(
@@ -398,6 +490,7 @@ def pressure_status():
     response = jsonify(
         {
             "pressed": pressed,
+            "controller_pressed": controller_pressure_input.is_pressed,
             "mode": pressure_input.mode,
             "selected_station": station,
         }
@@ -448,18 +541,21 @@ def log_stat_event():
     return jsonify({"recorded": True})
 
 
-@app.post("/api/mock-pressure")
-def set_mock_pressure():
-    if not isinstance(pressure_input, MockPressureInput):
-        return jsonify({"error": "Mock pressure controls are disabled in real GPIO mode"}), 403
-
+@app.post("/api/controller-pressure")
+def set_controller_pressure():
     data = request.get_json(silent=True) or {}
     pressed = data.get("pressed")
     if not isinstance(pressed, bool):
         return jsonify({"error": "pressed must be a boolean"}), 400
 
-    pressure_input.set_pressed(pressed)
-    return jsonify({"pressed": pressure_input.is_pressed, "mode": pressure_input.mode})
+    controller_pressure_input.set_pressed(pressed)
+    return jsonify(
+        {
+            "pressed": pressure_is_pressed(),
+            "controller_pressed": controller_pressure_input.is_pressed,
+            "mode": pressure_input.mode,
+        }
+    )
 
 
 if __name__ == "__main__":
