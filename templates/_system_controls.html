@@ -7,6 +7,7 @@
       <a class="secret-action secret-action--reset" href="{{ url_for('index', reset=1) }}">Reset Experience</a>
       {% if show_persona %}
         <button id="secret-choose-persona" class="secret-action" type="button">Choose Persona</button>
+        <a id="system-mat-counter" class="secret-action" href="{{ url_for('mat_test') }}" hidden>Open Mat Counter</a>
       {% endif %}
       <a class="secret-action" href="{{ url_for('stats_dashboard') }}">View Statistics</a>
       <button id="system-update" class="secret-action" type="button" disabled aria-live="polite">Checking Network…</button>

@@ -127,16 +127,26 @@
     }
   }
 
-  function exitKiosk() {
+  async function exitKiosk() {
     exitButton.disabled = true;
     exitButton.textContent = "Closing Kiosk…";
-    window.close();
 
-    // Restore the button if this page was opened without the kiosk launch flag.
-    window.setTimeout(() => {
+    try {
+      const response = await fetch("/api/kiosk/exit", { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || "The kiosk could not be closed.");
+      }
+
+      // This only runs if Chromium did not close as requested.
+      window.setTimeout(() => {
+        exitButton.disabled = false;
+        exitButton.textContent = "Exit Failed — Try Again";
+      }, 2500);
+    } catch (_error) {
       exitButton.disabled = false;
-      exitButton.textContent = "Exit Kiosk";
-    }, 1500);
+      exitButton.textContent = "Exit Failed — Try Again";
+    }
   }
 
   document.addEventListener("pointerup", registerTap);

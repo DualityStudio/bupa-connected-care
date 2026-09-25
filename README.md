@@ -46,7 +46,7 @@ To control the experience from another device on the same network, replace `loca
 7. Returning from the outcome enters a lights-out start state. If the previous visitor is still on the mat, stepping off quietly re-arms it without showing the five-second countdown; the next fresh press starts the introduction.
 8. Leaving the mat during an active welcome or story starts the five-second countdown while the current video continues playing. The transparent overlaid buttons dim and **Step on the spot for the introduction** appears. Returning during the countdown cancels the pending reset without interrupting playback; expiry clears watched progress and starts the idle video.
 
-Tap any non-interactive area 10 times within four seconds to open the hidden system controls on the kiosk, mat controller, repeated press test, or statistics page. Taps on buttons, links, and form fields do not count. Every page can reset the experience, open statistics, check for an application update, or exit the kiosk; persona selection appears only on the visitor kiosk. Resetting does not change the selected persona.
+Tap any non-interactive area 10 times within four seconds to open the hidden system controls on the kiosk, mat controller, repeated press test, or statistics page. Taps on buttons, links, and form fields do not count. Every page can reset the experience, open statistics, check for an application update, or exit the kiosk; persona selection appears only on the visitor kiosk. The initial setup screen also provides a link to the pressure-mat counter. Resetting does not change the selected persona.
 
 ## Edit the content
 
@@ -196,7 +196,7 @@ The idle loop is deliberately audible. Chromium is started with `--autoplay-poli
 
 ### Leave kiosk mode and perform maintenance
 
-Choose **Exit Kiosk** in the hidden system controls to close Chromium and leave the desktop visible. The Flask server remains running in the background. With a keyboard connected, `Alt` + `F4` provides the same result. Open a terminal with `Ctrl` + `Alt` + `T`.
+Choose **Exit Kiosk** in the hidden system controls to close Chromium and leave the desktop visible. The kiosk launcher treats this as a deliberate exit and does not reopen the browser. The Flask server remains running in the background. With a keyboard connected, `Alt` + `F4` provides the same result. Open a terminal with `Ctrl` + `Alt` + `T`.
 
 To launch the kiosk again without rebooting, run this from the project directory:
 

@@ -23,6 +23,18 @@ UPDATE_REMOTE = "origin"
 UPDATE_BRANCH = "main"
 STATE_PATH_VALUE = os.environ.get("BUPA_STATE_PATH", "").strip()
 STATE_PATH = Path(STATE_PATH_VALUE) if STATE_PATH_VALUE else None
+KIOSK_CONTROL_DIR_VALUE = os.environ.get("BUPA_KIOSK_CONTROL_DIR", "").strip()
+KIOSK_CONTROL_DIR = (
+    Path(KIOSK_CONTROL_DIR_VALUE)
+    if KIOSK_CONTROL_DIR_VALUE
+    else (STATE_PATH.parent if STATE_PATH is not None else None)
+)
+KIOSK_BROWSER_PID_PATH = (
+    KIOSK_CONTROL_DIR / "chromium.pid" if KIOSK_CONTROL_DIR is not None else None
+)
+KIOSK_EXIT_REQUEST_PATH = (
+    KIOSK_CONTROL_DIR / "exit-kiosk" if KIOSK_CONTROL_DIR is not None else None
+)
 STATS_DIR_VALUE = os.environ.get("BUPA_STATS_DIR", "").strip()
 STATS_DIR = Path(STATS_DIR_VALUE) if STATS_DIR_VALUE else BASE_DIR / "data" / "stats"
 MAT_TEST_COUNTER_PATH_VALUE = os.environ.get("BUPA_MAT_TEST_COUNTER_PATH", "").strip()
@@ -273,6 +285,7 @@ runtime_lock = Lock()
 stats_lock = Lock()
 mat_test_counter_lock = Lock()
 update_lock = Lock()
+kiosk_control_lock = Lock()
 selected_station = load_selected_station(content_config["stations"])
 station_ids = tuple(content_config["stations"])
 
@@ -443,6 +456,30 @@ def restart_after_update() -> None:
     os.kill(os.getpid(), signal.SIGTERM)
 
 
+def running_kiosk_browser_pid() -> int | None:
+    if KIOSK_BROWSER_PID_PATH is None:
+        return None
+
+    try:
+        pid = int(KIOSK_BROWSER_PID_PATH.read_text(encoding="utf-8").strip())
+        command = Path(f"/proc/{pid}/cmdline").read_bytes().lower()
+    except (OSError, ValueError):
+        return None
+
+    if pid <= 1 or b"chromium" not in command:
+        return None
+    return pid
+
+
+def terminate_kiosk_browser(pid: int) -> None:
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as error:
+        app.logger.error("Could not close the kiosk browser: %s", error)
+        if KIOSK_EXIT_REQUEST_PATH is not None:
+            KIOSK_EXIT_REQUEST_PATH.unlink(missing_ok=True)
+
+
 @app.get("/")
 def index():
     return render_template("index.html", content=content_config)
@@ -486,6 +523,26 @@ def update_status():
     response = jsonify({"available": available})
     response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@app.post("/api/kiosk/exit")
+def exit_kiosk():
+    with kiosk_control_lock:
+        pid = running_kiosk_browser_pid()
+        if pid is None or KIOSK_EXIT_REQUEST_PATH is None:
+            return jsonify({"error": "The kiosk browser is not running"}), 409
+
+        try:
+            KIOSK_EXIT_REQUEST_PATH.write_text("exit\n", encoding="utf-8")
+        except OSError as error:
+            app.logger.error("Could not request kiosk exit: %s", error)
+            return jsonify({"error": "The kiosk could not be closed"}), 500
+
+        exit_timer = Timer(0.35, terminate_kiosk_browser, args=(pid,))
+        exit_timer.daemon = True
+        exit_timer.start()
+
+    return jsonify({"closing": True})
 
 
 @app.post("/api/update")

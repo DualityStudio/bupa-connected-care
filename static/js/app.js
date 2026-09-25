@@ -46,6 +46,7 @@
     finalText: document.getElementById("final-text"),
     countdown: document.getElementById("countdown"),
     countdownNumber: document.getElementById("countdown-number"),
+    systemMatCounter: document.getElementById("system-mat-counter"),
     secretChoosePersona: document.getElementById("secret-choose-persona"),
     secretPersonaPicker: document.getElementById("secret-persona-picker"),
     secretPersonaButtons: [...document.querySelectorAll("[data-secret-station]")],
@@ -99,6 +100,7 @@
   function showOnly(screen) {
     elements.setupScreen.hidden = screen !== "setup";
     elements.experienceScreen.hidden = screen !== "experience";
+    elements.systemMatCounter.hidden = screen !== "setup";
   }
 
   function setMatIndicator(complete, label) {
