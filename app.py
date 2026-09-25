@@ -25,6 +25,12 @@ STATE_PATH_VALUE = os.environ.get("BUPA_STATE_PATH", "").strip()
 STATE_PATH = Path(STATE_PATH_VALUE) if STATE_PATH_VALUE else None
 STATS_DIR_VALUE = os.environ.get("BUPA_STATS_DIR", "").strip()
 STATS_DIR = Path(STATS_DIR_VALUE) if STATS_DIR_VALUE else BASE_DIR / "data" / "stats"
+MAT_TEST_COUNTER_PATH_VALUE = os.environ.get("BUPA_MAT_TEST_COUNTER_PATH", "").strip()
+MAT_TEST_COUNTER_PATH = (
+    Path(MAT_TEST_COUNTER_PATH_VALUE)
+    if MAT_TEST_COUNTER_PATH_VALUE
+    else BASE_DIR / "data" / "mat-test-counter.json"
+)
 
 
 def load_content() -> dict[str, Any]:
@@ -134,6 +140,47 @@ def current_local_time() -> datetime:
     return datetime.now().astimezone()
 
 
+def load_mat_test_counter() -> dict[str, Any]:
+    if not MAT_TEST_COUNTER_PATH.exists():
+        return {"count": 0, "updated_at": None}
+
+    try:
+        counter = json.loads(MAT_TEST_COUNTER_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"Pressure-mat test counter is not valid JSON: {MAT_TEST_COUNTER_PATH}"
+        ) from error
+
+    if not isinstance(counter, dict):
+        raise RuntimeError(
+            f"Pressure-mat test counter has the wrong format: {MAT_TEST_COUNTER_PATH}"
+        )
+
+    count = counter.get("count")
+    if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+        raise RuntimeError(
+            f"Pressure-mat test counter must contain a non-negative integer: "
+            f"{MAT_TEST_COUNTER_PATH}"
+        )
+
+    return {
+        "count": count,
+        "updated_at": counter.get("updated_at"),
+    }
+
+
+def save_mat_test_counter(counter: dict[str, Any]) -> None:
+    MAT_TEST_COUNTER_PATH.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = MAT_TEST_COUNTER_PATH.with_name(
+        f".{MAT_TEST_COUNTER_PATH.name}.tmp"
+    )
+    temporary_path.write_text(
+        f"{json.dumps(counter, indent=2, sort_keys=True)}\n",
+        encoding="utf-8",
+    )
+    temporary_path.replace(MAT_TEST_COUNTER_PATH)
+
+
 def new_daily_stats(date_key: str) -> dict[str, Any]:
     return {
         "date": date_key,
@@ -224,6 +271,7 @@ controller_pressure_input = (
 )
 runtime_lock = Lock()
 stats_lock = Lock()
+mat_test_counter_lock = Lock()
 update_lock = Lock()
 selected_station = load_selected_station(content_config["stations"])
 station_ids = tuple(content_config["stations"])
@@ -510,6 +558,54 @@ def pressure_status():
     )
     response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@app.get("/api/mat-test-counter")
+def get_mat_test_counter():
+    try:
+        with mat_test_counter_lock:
+            counter = load_mat_test_counter()
+    except (OSError, RuntimeError) as error:
+        app.logger.error("Could not read pressure-mat test counter: %s", error)
+        return jsonify({"error": "The pressure-mat test counter could not be read"}), 500
+
+    response = jsonify(counter)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.post("/api/mat-test-counter")
+def update_mat_test_counter():
+    data = request.get_json(silent=True) or {}
+    action = data.get("action")
+    if action not in {"increment", "reset", "set"}:
+        return jsonify({"error": "action must be increment, reset or set"}), 400
+
+    requested_count = data.get("count")
+    if action == "set" and (
+        isinstance(requested_count, bool)
+        or not isinstance(requested_count, int)
+        or requested_count < 0
+    ):
+        return jsonify({"error": "count must be a non-negative integer"}), 400
+
+    try:
+        with mat_test_counter_lock:
+            counter = load_mat_test_counter()
+            if action == "increment":
+                counter["count"] += 1
+            elif action == "reset":
+                counter["count"] = 0
+            else:
+                counter["count"] = requested_count
+
+            counter["updated_at"] = current_local_time().isoformat(timespec="seconds")
+            save_mat_test_counter(counter)
+    except (OSError, RuntimeError) as error:
+        app.logger.error("Could not save pressure-mat test counter: %s", error)
+        return jsonify({"error": "The pressure-mat test counter could not be saved"}), 500
+
+    return jsonify(counter)
 
 
 @app.post("/api/station")

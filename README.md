@@ -131,6 +131,29 @@ sudo reboot
 
 Future reboots will update automatically. Ordinary service crash restarts do not repeatedly contact Git. If a future update changes system packages or the system service itself, rerun `./scripts/install-pi.sh` manually after that update.
 
+## Pressure-mat test counter
+
+The counter at `/mat-test` is persisted separately in `data/mat-test-counter.json`. It survives page reloads, Chromium restarts, application restarts, and Pi reboots. It is not included in the daily statistics files and never appears on the `/stats` screen.
+
+The file is ignored by Git and has this format:
+
+```json
+{
+  "count": 123,
+  "updated_at": "2026-09-25T10:30:00+01:00"
+}
+```
+
+To restore the number already shown on a Pi after installing this version, replace `123` with that number and run this from the Pi:
+
+```bash
+curl -X POST http://localhost:5000/api/mat-test-counter \
+  -H 'Content-Type: application/json' \
+  -d '{"action":"set","count":123}'
+```
+
+The response shows the saved count. Opening `/mat-test` then loads that value. The page's **Reset counter** button writes zero to this same file.
+
 ## Daily statistics
 
 The kiosk writes one file per day under `data/stats`, for example `data/stats/2026-09-16.json`. These generated files are ignored by Git and remain on the Pi across service restarts and reboots.

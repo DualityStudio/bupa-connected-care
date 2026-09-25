@@ -15,6 +15,35 @@
   let previousPressure = null;
   let pollInFlight = false;
 
+  function renderCount(value) {
+    count = value;
+    elements.pressCount.textContent = String(count);
+  }
+
+  async function loadCounter() {
+    const response = await fetch("/api/mat-test-counter", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`Counter request failed with ${response.status}`);
+    }
+
+    const counter = await response.json();
+    renderCount(counter.count);
+  }
+
+  async function updateCounter(action) {
+    const response = await fetch("/api/mat-test-counter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    if (!response.ok) {
+      throw new Error(`Counter update failed with ${response.status}`);
+    }
+
+    const counter = await response.json();
+    renderCount(counter.count);
+  }
+
   function renderPressure(pressed) {
     elements.matIndicator.classList.toggle("is-complete", pressed);
     elements.matIndicatorText.textContent = pressed ? "Mat pressed" : "Mat released";
@@ -41,8 +70,7 @@
         : "Physical input · BCM GPIO 17";
 
       if (previousPressure === false && pressed) {
-        count += 1;
-        elements.pressCount.textContent = String(count);
+        await updateCounter("increment");
       }
 
       previousPressure = pressed;
@@ -58,11 +86,23 @@
     }
   }
 
-  elements.resetCount.addEventListener("click", () => {
-    count = 0;
-    elements.pressCount.textContent = "0";
+  elements.resetCount.addEventListener("click", async () => {
+    elements.resetCount.disabled = true;
+    try {
+      await updateCounter("reset");
+    } catch (_error) {
+      elements.connectionBanner.hidden = false;
+    } finally {
+      elements.resetCount.disabled = false;
+    }
   });
 
-  pollStatus();
-  window.setInterval(pollStatus, STATUS_POLL_INTERVAL_MS);
+  loadCounter()
+    .catch(() => {
+      elements.connectionBanner.hidden = false;
+    })
+    .finally(() => {
+      pollStatus();
+      window.setInterval(pollStatus, STATUS_POLL_INTERVAL_MS);
+    });
 })();

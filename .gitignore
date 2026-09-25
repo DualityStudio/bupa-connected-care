@@ -5,6 +5,8 @@ __pycache__/
 .idea
 data/stats/*.json
 data/stats/.*.tmp
+data/mat-test-counter.json
+data/.mat-test-counter.json.tmp
 static/media/**/*.m4v
 static/media/**/*.mov
 static/media/.transcode-1080/
