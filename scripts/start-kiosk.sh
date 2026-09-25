@@ -25,6 +25,7 @@ while true; do
       --no-first-run \
       --password-store=basic \
       --disable-session-crashed-bubble \
+      --allow-scripts-to-close-windows \
       --disable-pinch \
       --overscroll-history-navigation=0 \
       --autoplay-policy=no-user-gesture-required \

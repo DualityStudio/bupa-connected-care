@@ -10,6 +10,7 @@
       {% endif %}
       <a class="secret-action" href="{{ url_for('stats_dashboard') }}">View Statistics</a>
       <button id="system-update" class="secret-action" type="button" disabled aria-live="polite">Checking Network…</button>
+      <button id="system-exit" class="secret-action secret-action--exit" type="button">Exit Kiosk</button>
     </div>
 
     {% if show_persona %}

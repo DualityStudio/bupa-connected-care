@@ -6,10 +6,11 @@
   const menu = document.getElementById("secret-menu");
   const closeButton = document.getElementById("secret-menu-close");
   const updateButton = document.getElementById("system-update");
+  const exitButton = document.getElementById("system-exit");
   let tapTimes = [];
   let updateInFlight = false;
 
-  if (!menu || !closeButton || !updateButton) {
+  if (!menu || !closeButton || !updateButton || !exitButton) {
     return;
   }
 
@@ -126,9 +127,22 @@
     }
   }
 
+  function exitKiosk() {
+    exitButton.disabled = true;
+    exitButton.textContent = "Closing Kiosk…";
+    window.close();
+
+    // Restore the button if this page was opened without the kiosk launch flag.
+    window.setTimeout(() => {
+      exitButton.disabled = false;
+      exitButton.textContent = "Exit Kiosk";
+    }, 1500);
+  }
+
   document.addEventListener("pointerup", registerTap);
   closeButton.addEventListener("click", closeMenu);
   updateButton.addEventListener("click", runUpdate);
+  exitButton.addEventListener("click", exitKiosk);
 
   window.bupaSystemControls = { close: closeMenu };
 })();

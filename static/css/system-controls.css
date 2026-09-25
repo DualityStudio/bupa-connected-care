@@ -73,6 +73,10 @@
   border-color: rgba(255, 142, 142, 0.34);
 }
 
+.secret-action--exit {
+  border-color: rgba(255, 195, 118, 0.4);
+}
+
 .secret-action:disabled {
   cursor: default;
   opacity: 0.42;

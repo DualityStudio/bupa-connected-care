@@ -44,9 +44,9 @@ To control the experience from another device on the same network, replace `loca
 5. Watch the three stories in any order. Buttons remain visible during playback, another story can be selected at any time, and watched stories remain available for replay.
 6. Each completed story returns to the idle loop and removes its progress bar. After all three distinct stories finish, the buttons fade away and the station's Connected Care Outcome appears for 16 seconds with a persona-coloured progress bar before returning to the start automatically. Tapping the outcome dismisses it early and returns to the idle loop with the active buttons and watched markers preserved; stepping off then starts the normal five-second timeout.
 7. Returning from the outcome enters a lights-out start state. If the previous visitor is still on the mat, stepping off quietly re-arms it without showing the five-second countdown; the next fresh press starts the introduction.
-8. Leaving the mat during an active welcome or story switches back to the idle loop, dims the transparent overlaid buttons, and displays **Step on the spot for the introduction**. Returning during the five-second countdown restores the session; expiry clears watched progress while the idle video continues.
+8. Leaving the mat during an active welcome or story starts the five-second countdown while the current video continues playing. The transparent overlaid buttons dim and **Step on the spot for the introduction** appears. Returning during the countdown cancels the pending reset without interrupting playback; expiry clears watched progress and starts the idle video.
 
-Tap any non-interactive area 10 times within four seconds to open the hidden system controls on the kiosk, mat controller, repeated press test, or statistics page. Taps on buttons, links, and form fields do not count. Every page can reset the experience, open statistics, and check for an application update; persona selection appears only on the visitor kiosk. Resetting does not change the selected persona.
+Tap any non-interactive area 10 times within four seconds to open the hidden system controls on the kiosk, mat controller, repeated press test, or statistics page. Taps on buttons, links, and form fields do not count. Every page can reset the experience, open statistics, check for an application update, or exit the kiosk; persona selection appears only on the visitor kiosk. Resetting does not change the selected persona.
 
 ## Edit the content
 
@@ -196,7 +196,7 @@ The idle loop is deliberately audible. Chromium is started with `--autoplay-poli
 
 ### Leave kiosk mode and perform maintenance
 
-With a keyboard connected, press `Alt` + `F4` to close Chromium. A normal close now leaves the desktop visible instead of triggering the crash restart loop. Open a terminal with `Ctrl` + `Alt` + `T`.
+Choose **Exit Kiosk** in the hidden system controls to close Chromium and leave the desktop visible. The Flask server remains running in the background. With a keyboard connected, `Alt` + `F4` provides the same result. Open a terminal with `Ctrl` + `Alt` + `T`.
 
 To launch the kiosk again without rebooting, run this from the project directory:
 

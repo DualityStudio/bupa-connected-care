@@ -58,7 +58,6 @@
   let watchedVideoIds = new Set();
   let activeVideoId = null;
   let sequenceCompleted = false;
-  let resumeState = "ready";
   let pollInFlight = false;
   let playbackGeneration = 0;
   let placeholderTimer = null;
@@ -115,7 +114,6 @@
     watchedVideoIds.clear();
     activeVideoId = null;
     sequenceCompleted = false;
-    resumeState = "ready";
     showOnly("setup");
     setAccent("#8ce2d0");
     elements.setupTitle.textContent = "Test the Pressure Mat";
@@ -139,7 +137,6 @@
     watchedVideoIds.clear();
     activeVideoId = null;
     sequenceCompleted = false;
-    resumeState = "ready";
     playIdle();
     showExperience();
   }
@@ -188,7 +185,6 @@
     watchedVideoIds.clear();
     activeVideoId = null;
     sequenceCompleted = false;
-    resumeState = "ready";
     state = pressureIsPressed ? "wait-release" : "idle";
     hideCompletion();
     playIdle();
@@ -221,7 +217,6 @@
     watchedVideoIds.clear();
     activeVideoId = null;
     sequenceCompleted = false;
-    resumeState = "ready";
     state = "idle";
     hideCompletion();
     if (restartVideo) {
@@ -578,7 +573,6 @@
     watchedVideoIds.clear();
     activeVideoId = null;
     sequenceCompleted = false;
-    resumeState = "ready";
 
     if (!selectedStationId) {
       showMatSetup();
@@ -590,44 +584,17 @@
   }
 
   function expireVisitorSession() {
-    cancelResetCountdown();
-    watchedVideoIds.clear();
-    activeVideoId = null;
-    sequenceCompleted = false;
-    resumeState = "ready";
-    state = "idle";
-    hideCompletion();
-    showExperience();
+    startFreshIdle();
   }
 
-  function beginStepAway(previousState) {
-    resumeState = previousState === "welcome"
-      ? "welcome"
-      : (previousState === "complete" ? "complete" : "ready");
-    state = "away";
-    activeVideoId = null;
-    hideCompletion();
-
-    if (["welcome", "playing"].includes(previousState)) {
-      playIdle();
-    }
-
+  function beginStepAway() {
     showExperience();
     startResetCountdown();
   }
 
   function resumeVisitorSession() {
     cancelResetCountdown();
-    if (resumeState === "welcome") {
-      startWelcome({ recordTrigger: false });
-      return;
-    }
-
-    state = sequenceCompleted ? "complete" : "ready";
     showExperience();
-    if (sequenceCompleted) {
-      revealCompletion();
-    }
   }
 
   function processPressure(previousPressure, currentPressure) {
@@ -643,11 +610,11 @@
     }
 
     if (ACTIVE_SESSION_STATES.has(state) && previousPressure && !currentPressure) {
-      beginStepAway(state);
+      beginStepAway();
       return;
     }
 
-    if (state === "away" && currentPressure && previousPressure === false) {
+    if (countdownInterval !== null && currentPressure && previousPressure === false) {
       resumeVisitorSession();
       return;
     }
@@ -709,7 +676,6 @@
         watchedVideoIds.clear();
         activeVideoId = null;
         sequenceCompleted = false;
-        resumeState = "ready";
 
         if (!selectedStationId) {
           showMatSetup();
@@ -763,7 +729,6 @@
       watchedVideoIds.clear();
       activeVideoId = null;
       sequenceCompleted = false;
-      resumeState = "ready";
       setStationDisplay();
       if (pressureIsPressed) {
         startWelcome({ recordTrigger });
