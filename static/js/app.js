@@ -62,7 +62,6 @@
   let pollInFlight = false;
   let playbackGeneration = 0;
   let placeholderTimer = null;
-  let progressAnimationFrame = null;
   let completionTimer = null;
   let countdownInterval = null;
   let countdownDeadline = null;
@@ -384,6 +383,8 @@
     const video = elements.videoPlayer;
     video.onended = null;
     video.onerror = null;
+    video.onloadedmetadata = null;
+    video.ontimeupdate = null;
     video.pause();
     video.removeAttribute("src");
     video.load();
@@ -391,11 +392,6 @@
   }
 
   function hideMediaProgress() {
-    if (progressAnimationFrame !== null) {
-      window.cancelAnimationFrame(progressAnimationFrame);
-      progressAnimationFrame = null;
-    }
-
     elements.mediaProgress.hidden = true;
     elements.mediaProgress.classList.remove("is-timed", "is-video");
     elements.mediaProgressFill.style.removeProperty("transform");
@@ -417,7 +413,6 @@
 
     const update = () => {
       if (generation !== playbackGeneration) {
-        progressAnimationFrame = null;
         return;
       }
 
@@ -426,10 +421,10 @@
         ? Math.min(1, Math.max(0, elements.videoPlayer.currentTime / duration))
         : 0;
       elements.mediaProgressFill.style.transform = `scaleX(${progress})`;
-      progressAnimationFrame = window.requestAnimationFrame(update);
     };
 
-    progressAnimationFrame = window.requestAnimationFrame(update);
+    elements.videoPlayer.onloadedmetadata = update;
+    elements.videoPlayer.ontimeupdate = update;
   }
 
   function stopMedia() {

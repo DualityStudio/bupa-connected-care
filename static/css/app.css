@@ -391,6 +391,10 @@ button {
   animation: media-progress-fill var(--media-duration, 6s) linear forwards;
 }
 
+.media-progress.is-video span {
+  transition: transform 240ms linear;
+}
+
 @keyframes media-progress-fill {
   to { transform: scaleX(1); }
 }
@@ -486,7 +490,6 @@ button {
   border: 2px solid rgba(255, 255, 255, 0.34);
   background: rgba(0, 0, 0, 0.52);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38);
-  backdrop-filter: blur(10px);
 }
 
 .mat-prompt__spot {
@@ -508,6 +511,12 @@ button {
   border-radius: inherit;
   content: "";
   animation: spot-sonar 2s ease-out infinite;
+  animation-play-state: paused;
+  will-change: opacity, transform;
+}
+
+.mat-prompt.is-visible .mat-prompt__spot::after {
+  animation-play-state: running;
 }
 
 .mat-prompt__spot svg {
@@ -555,6 +564,8 @@ button {
   transform: translateX(-50%);
   transform-origin: 60% 10%;
   animation: touch-tap 1.6s ease-in-out infinite;
+  animation-play-state: paused;
+  will-change: transform;
 }
 
 .touch-hint__ripple {
@@ -566,7 +577,14 @@ button {
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   animation: touch-ripple 1.6s ease-out infinite;
+  animation-play-state: paused;
   transform: translateX(-50%);
+  will-change: opacity, transform;
+}
+
+.touch-hint.is-visible .touch-hint__hand svg,
+.touch-hint.is-visible .touch-hint__ripple {
+  animation-play-state: running;
 }
 
 .touch-hint__ripple--delayed {
@@ -633,7 +651,6 @@ button {
   background: rgba(255, 255, 255, 0.12);
   color: var(--white);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(8px);
   transition:
     background 420ms cubic-bezier(0.22, 1, 0.36, 1),
     border-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -642,13 +659,14 @@ button {
 
 .video-choice__icon::after {
   position: absolute;
-  inset: -3px;
+  inset: -4px;
+  border: 3px solid rgba(0, 121, 200, 0.62);
   border-radius: inherit;
-  box-shadow: 0 0 0 0 rgba(0, 121, 200, 0);
   content: "";
   opacity: 0;
   pointer-events: none;
-  transition: opacity 320ms ease;
+  transform: scale(1);
+  will-change: opacity, transform;
 }
 
 .video-choice__icon svg {
@@ -691,8 +709,8 @@ button {
 }
 
 @keyframes button-ring-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 121, 200, 0); }
-  50% { box-shadow: 0 0 0 10px rgba(0, 121, 200, 0.42); }
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(1.16); }
 }
 
 .video-choice.is-watched .video-choice__icon {
