@@ -39,8 +39,8 @@ To control the experience from another device on the same network, replace `loca
 
 1. Use the mat once to pass the setup test.
 2. Select MAYA, MO, or MARY.
-3. If the mat is still pressed when the persona is selected, its welcome video starts immediately, the story buttons light up, and a touch prompt appears above them. Otherwise, the shared idle video loops with the buttons dimmed and a prompt asks the visitor to step on the spot.
-4. A fresh press plays the selected station's welcome video. The buttons remain available, and when the welcome finishes the idle video starts again.
+3. If the mat is still pressed when the persona is selected, its welcome video starts immediately and the story buttons light up. Otherwise, the shared idle video loops with the buttons dimmed and a prompt asks the visitor to step on the spot.
+4. A fresh press plays the selected station's welcome video. The buttons remain available, and when the welcome finishes the idle video starts again with the **Tap the buttons** prompt visible. The prompt stays hidden while the welcome or a selected story is playing.
 5. Watch the three stories in any order. Buttons remain visible during playback, another story can be selected at any time, and watched stories remain available for replay.
 6. Each completed story returns to the idle loop and removes its progress bar. After all three distinct stories finish, the buttons fade away and the station's Connected Care Outcome appears for 16 seconds with a persona-coloured progress bar before returning to the start automatically. Tapping the outcome dismisses it early and returns to the idle loop with the active buttons and watched markers preserved; stepping off then starts the normal five-second timeout.
 7. Returning from the outcome enters a lights-out start state. If the previous visitor is still on the mat, stepping off quietly re-arms it without showing the five-second countdown; the next fresh press starts the introduction.

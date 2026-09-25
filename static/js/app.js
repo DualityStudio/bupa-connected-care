@@ -287,7 +287,7 @@
     }
 
     const enabled = canChooseVideo();
-    const showTouchHint = enabled && !["playing", "complete"].includes(state);
+    const showTouchHint = enabled && state === "ready";
     elements.choicePanel.classList.toggle("is-lit", enabled);
     const showMatPrompt = pressureIsPressed === false || state === "wait-release";
     elements.matPrompt.classList.toggle("is-visible", showMatPrompt);
