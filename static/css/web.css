@@ -36,8 +36,8 @@
 
 .web-stage {
   position: relative;
-  width: min(100vw, calc(100dvh * 0.5625));
-  height: min(100dvh, calc(100vw * 1.7778));
+  width: min(100vw, 56.25dvh);
+  aspect-ratio: 9 / 16;
   overflow: hidden;
   background: #020b14;
   box-shadow: 0 0 80px rgba(0, 0, 0, 0.42);
@@ -53,16 +53,15 @@
   inset: 0;
   z-index: 11;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
+  align-items: flex-end;
+  justify-content: center;
   width: 100%;
-  padding: clamp(130px, 22vh, 210px) 48px 48px;
+  padding: 0 24px clamp(260px, 35cqw, 400px);
   border: 0;
-  background: rgba(2, 13, 24, 0.78);
+  background: transparent;
   color: #f8fbff;
   text-align: center;
+  backdrop-filter: none;
   transition: opacity 360ms ease, visibility 0s linear 360ms;
 }
 
@@ -72,33 +71,14 @@
   visibility: hidden;
 }
 
-.web-start span {
-  color: var(--station-accent);
-  font-size: clamp(20px, 2.3vw, 28px);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.web-start__prompt {
+  max-width: 100%;
+  pointer-events: none;
+  white-space: normal;
 }
 
-.web-start strong {
-  max-width: 14ch;
-  font-size: clamp(42px, 6vw, 72px);
-  line-height: 1.05;
-  letter-spacing: -0.035em;
-}
-
-.web-change-persona {
-  position: absolute;
-  top: max(18px, env(safe-area-inset-top));
-  left: 18px;
-  z-index: 14;
-  padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
-  background: rgba(2, 13, 24, 0.68);
-  color: #f8fbff;
-  font-size: clamp(13px, 1.7vw, 18px);
-  font-weight: 750;
+.web-start__prompt .mat-prompt__spot::after {
+  animation-play-state: running;
 }
 
 .web-stage .choice-panel {

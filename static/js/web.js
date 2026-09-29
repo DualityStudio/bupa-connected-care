@@ -32,7 +32,6 @@
     personaScreen: document.getElementById("web-persona-screen"),
     experienceScreen: document.getElementById("web-experience-screen"),
     personaButtons: document.getElementById("web-persona-buttons"),
-    changePersona: document.getElementById("web-change-persona"),
     start: document.getElementById("web-start"),
     startLabel: document.getElementById("web-start-label"),
     mediaFrame: document.getElementById("media-frame"),
@@ -77,7 +76,7 @@
 
     elements.app.style.setProperty("--station-accent", selectedStation.accent);
     elements.finalText.textContent = selectedStation.finalText;
-    elements.startLabel.textContent = `Begin ${storyName(selectedStation)}'s story`;
+    elements.startLabel.textContent = `Tap to start ${storyName(selectedStation)}'s story`;
     elements.touchHintText.textContent = `Tap the buttons to hear ${storyName(selectedStation)}'s story`;
   }
 
@@ -478,7 +477,6 @@
     }
   }
 
-  elements.changePersona.addEventListener("click", showPersonaPicker);
   elements.start.addEventListener("click", startExperience);
   elements.completionOverlay.addEventListener("click", resetSelectedPersona);
   elements.autoplayPrompt.addEventListener("click", retryPlaybackAfterTap);
