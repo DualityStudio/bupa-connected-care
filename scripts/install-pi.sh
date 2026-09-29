@@ -12,8 +12,6 @@ AUTOSTART_PATH="${KIOSK_HOME}/.config/labwc/autostart"
 LABWC_RC_PATH="${KIOSK_HOME}/.config/labwc/rc.xml"
 AUTOSTART_START="# BUPA_SCREEN_KIOSK_START"
 AUTOSTART_END="# BUPA_SCREEN_KIOSK_END"
-LABWC_KEYS_START="<!-- BUPA_SCREEN_KIOSK_KEYS_START -->"
-LABWC_KEYS_END="<!-- BUPA_SCREEN_KIOSK_KEYS_END -->"
 KIOSK_LOG_DIR="${KIOSK_HOME}/.local/state/bupa-screen"
 KIOSK_LOG_PATH="${KIOSK_LOG_DIR}/kiosk.log"
 
@@ -111,35 +109,18 @@ if [[ -f "${LABWC_RC_PATH}" ]]; then
 elif [[ -f /etc/xdg/labwc/rc.xml ]]; then
   cp /etc/xdg/labwc/rc.xml "${LABWC_RC_TEMP}"
 else
-  echo "Warning: Labwc rc.xml was not found. Minimise Kiosk needs a Labwc key binding." >&2
-  : >"${LABWC_RC_TEMP}"
+  echo "Labwc rc.xml was not found; creating a minimal configuration."
+  printf '<labwc_config>\n</labwc_config>\n' >"${LABWC_RC_TEMP}"
 fi
 
 if [[ -s "${LABWC_RC_TEMP}" ]]; then
-  awk -v start="${LABWC_KEYS_START}" -v end="${LABWC_KEYS_END}" '
-    $0 ~ start { skipping = 1; next }
-    $0 ~ end { skipping = 0; next }
-    !skipping { print }
-  ' "${LABWC_RC_TEMP}" >"${LABWC_RC_CLEAN_TEMP}"
-
-  awk -v start="${LABWC_KEYS_START}" -v end="${LABWC_KEYS_END}" '
-    !inserted && /<\/keyboard>/ {
-      print "    " start
-      print "    <keybind key=\"C-A-F12\">"
-      print "      <action name=\"Iconify\" />"
-      print "    </keybind>"
-      print "    " end
-      inserted = 1
-    }
-    { print }
-    END { if (!inserted) exit 1 }
-  ' "${LABWC_RC_CLEAN_TEMP}" >"${LABWC_RC_TEMP}" || {
+  /usr/bin/python3 "${APP_DIR}/scripts/configure-labwc.py" \
+    "${LABWC_RC_TEMP}" "${LABWC_RC_CLEAN_TEMP}" || {
     echo "Could not add the kiosk minimise binding to ${LABWC_RC_PATH}." >&2
     exit 1
   }
 
-  /usr/bin/python3 -c 'import sys, xml.etree.ElementTree as ET; ET.parse(sys.argv[1])' "${LABWC_RC_TEMP}"
-  "${SUDO[@]}" install -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" -m 0644 "${LABWC_RC_TEMP}" "${LABWC_RC_PATH}"
+  "${SUDO[@]}" install -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" -m 0644 "${LABWC_RC_CLEAN_TEMP}" "${LABWC_RC_PATH}"
 fi
 
 if command -v raspi-config >/dev/null; then
