@@ -193,3 +193,25 @@
     font-size: 15px;
   }
 }
+
+@container (max-width: 520px) {
+  .web-stage .choice-panel {
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+
+  .web-stage .video-choices {
+    gap: 8px;
+  }
+
+  .web-stage .video-choice {
+    gap: 8px;
+  }
+
+  .web-stage .video-choice__icon {
+    width: clamp(58px, 21cqw, 84px);
+  }
+
+  .web-stage .video-choice__label {
+    font-size: clamp(13px, 4.1cqw, 18px);
+  }
+}
