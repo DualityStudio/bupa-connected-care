@@ -6,7 +6,12 @@ KIOSK_CONTROL_DIR="${BUPA_KIOSK_CONTROL_DIR:-/run/bupa-screen}"
 KIOSK_BROWSER_PID_PATH="${KIOSK_CONTROL_DIR}/chromium.pid"
 KIOSK_EXIT_REQUEST_PATH="${KIOSK_CONTROL_DIR}/exit-kiosk"
 KIOSK_MINIMISE_REQUEST_PATH="${KIOSK_CONTROL_DIR}/minimise-kiosk"
+KIOSK_LOG_PATH="${BUPA_KIOSK_LOG_PATH:-${XDG_STATE_HOME:-${HOME}/.local/state}/bupa-screen/kiosk.log}"
 MINIMISE_MONITOR_PID=""
+
+mkdir -p -- "$(dirname -- "${KIOSK_LOG_PATH}")"
+exec >>"${KIOSK_LOG_PATH}" 2>&1
+printf '\n[%s] Starting kiosk launcher.\n' "$(date --iso-8601=seconds)"
 
 if [[ -x /usr/bin/chromium ]]; then
   CHROMIUM_BIN=/usr/bin/chromium
@@ -36,7 +41,8 @@ monitor_minimise_requests() {
   while true; do
     if IFS= read -r request <"${KIOSK_MINIMISE_REQUEST_PATH}"; then
       if [[ "${request}" == "minimise" ]]; then
-        if ! /usr/bin/wtype -M logo -k d -m logo; then
+        echo "Minimise requested."
+        if ! /usr/bin/wtype -M ctrl -M alt -k F12 -m alt -m ctrl; then
           echo "Could not minimise Chromium through Labwc." >&2
         fi
       fi

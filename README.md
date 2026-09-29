@@ -134,6 +134,7 @@ The installer:
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
 - Adds a managed kiosk entry to `~/.config/labwc/autostart`.
+- Adds a managed Labwc shortcut used by **Minimise Kiosk** to minimise Chromium without relying on the desktop's default key bindings.
 - Checks `origin/main` once per boot and runs a fast-forward-only pull when that branch is reachable. A failed or unavailable update never prevents startup.
 - Waits for the local server, then opens Chromium fullscreen with audible autoplay enabled. Chromium uses its local basic password store so automatic login does not prompt to unlock the desktop keyring.
 - Restarts Chromium after an unexpected failure, while allowing a deliberate `Alt` + `F4` close to remain closed for maintenance.
@@ -240,6 +241,8 @@ If the kiosk does not open automatically after login, inspect the desktop launch
 ```bash
 tail -n 200 ~/.local/state/bupa-screen/kiosk.log
 ```
+
+The installer creates this log file, and the kiosk launcher appends to it whether it starts automatically or is run manually. If the file does not exist, the current installer has not been applied for that desktop user. Pull the latest code, run `./scripts/install-pi.sh`, and reboot once.
 
 If a Pi is still running an older version of the launcher that immediately reopens Chromium, press `Ctrl` + `Alt` + `F2` to reach a text login. Log in with the Pi username and password; Chromium can continue running on the desktop without blocking this console. From there you can update and reboot:
 

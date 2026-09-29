@@ -9,8 +9,11 @@ KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 SERVICE_NAME="bupa-screen.service"
 SERVICE_PATH="/etc/systemd/system/${SERVICE_NAME}"
 AUTOSTART_PATH="${KIOSK_HOME}/.config/labwc/autostart"
+LABWC_RC_PATH="${KIOSK_HOME}/.config/labwc/rc.xml"
 AUTOSTART_START="# BUPA_SCREEN_KIOSK_START"
 AUTOSTART_END="# BUPA_SCREEN_KIOSK_END"
+LABWC_KEYS_START="<!-- BUPA_SCREEN_KIOSK_KEYS_START -->"
+LABWC_KEYS_END="<!-- BUPA_SCREEN_KIOSK_KEYS_END -->"
 KIOSK_LOG_DIR="${KIOSK_HOME}/.local/state/bupa-screen"
 KIOSK_LOG_PATH="${KIOSK_LOG_DIR}/kiosk.log"
 
@@ -45,8 +48,10 @@ chmod +x \
 
 SERVICE_TEMP="$(mktemp)"
 AUTOSTART_TEMP="$(mktemp)"
+LABWC_RC_TEMP="$(mktemp)"
+LABWC_RC_CLEAN_TEMP="$(mktemp)"
 cleanup() {
-  rm -f "${SERVICE_TEMP}" "${AUTOSTART_TEMP}"
+  rm -f "${SERVICE_TEMP}" "${AUTOSTART_TEMP}" "${LABWC_RC_TEMP}" "${LABWC_RC_CLEAN_TEMP}"
 }
 trap cleanup EXIT
 
@@ -82,6 +87,8 @@ EOF
 
 "${SUDO[@]}" install -d -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" "$(dirname "${AUTOSTART_PATH}")"
 "${SUDO[@]}" install -d -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" "${KIOSK_LOG_DIR}"
+"${SUDO[@]}" touch "${KIOSK_LOG_PATH}"
+"${SUDO[@]}" chown "${KIOSK_USER}:${KIOSK_GROUP}" "${KIOSK_LOG_PATH}"
 if [[ -f "${AUTOSTART_PATH}" ]]; then
   awk -v start="${AUTOSTART_START}" -v end="${AUTOSTART_END}" '
     $0 == start { skipping = 1; next }
@@ -93,11 +100,47 @@ fi
 cat >>"${AUTOSTART_TEMP}" <<EOF
 
 ${AUTOSTART_START}
-"${APP_DIR}/scripts/start-kiosk.sh" >"${KIOSK_LOG_PATH}" 2>&1 &
+BUPA_KIOSK_LOG_PATH="${KIOSK_LOG_PATH}" "${APP_DIR}/scripts/start-kiosk.sh" &
 ${AUTOSTART_END}
 EOF
 
 "${SUDO[@]}" install -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" -m 0644 "${AUTOSTART_TEMP}" "${AUTOSTART_PATH}"
+
+if [[ -f "${LABWC_RC_PATH}" ]]; then
+  cp "${LABWC_RC_PATH}" "${LABWC_RC_TEMP}"
+elif [[ -f /etc/xdg/labwc/rc.xml ]]; then
+  cp /etc/xdg/labwc/rc.xml "${LABWC_RC_TEMP}"
+else
+  echo "Warning: Labwc rc.xml was not found. Minimise Kiosk needs a Labwc key binding." >&2
+  : >"${LABWC_RC_TEMP}"
+fi
+
+if [[ -s "${LABWC_RC_TEMP}" ]]; then
+  awk -v start="${LABWC_KEYS_START}" -v end="${LABWC_KEYS_END}" '
+    $0 ~ start { skipping = 1; next }
+    $0 ~ end { skipping = 0; next }
+    !skipping { print }
+  ' "${LABWC_RC_TEMP}" >"${LABWC_RC_CLEAN_TEMP}"
+
+  awk -v start="${LABWC_KEYS_START}" -v end="${LABWC_KEYS_END}" '
+    !inserted && /<\/keyboard>/ {
+      print "    " start
+      print "    <keybind key=\"C-A-F12\">"
+      print "      <action name=\"Iconify\" />"
+      print "    </keybind>"
+      print "    " end
+      inserted = 1
+    }
+    { print }
+    END { if (!inserted) exit 1 }
+  ' "${LABWC_RC_CLEAN_TEMP}" >"${LABWC_RC_TEMP}" || {
+    echo "Could not add the kiosk minimise binding to ${LABWC_RC_PATH}." >&2
+    exit 1
+  }
+
+  /usr/bin/python3 -c 'import sys, xml.etree.ElementTree as ET; ET.parse(sys.argv[1])' "${LABWC_RC_TEMP}"
+  "${SUDO[@]}" install -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" -m 0644 "${LABWC_RC_TEMP}" "${LABWC_RC_PATH}"
+fi
 
 if command -v raspi-config >/dev/null; then
   echo "Enabling desktop auto-login…"
