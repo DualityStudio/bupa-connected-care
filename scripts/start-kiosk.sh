@@ -16,9 +16,11 @@ else
 fi
 
 if [[ ! -d "${KIOSK_CONTROL_DIR}" ]]; then
-  echo "Kiosk control directory is unavailable: ${KIOSK_CONTROL_DIR}" >&2
-  exit 1
+  echo "Waiting for kiosk control directory: ${KIOSK_CONTROL_DIR}" >&2
 fi
+while [[ ! -d "${KIOSK_CONTROL_DIR}" ]]; do
+  sleep 1
+done
 
 rm -f "${KIOSK_BROWSER_PID_PATH}" "${KIOSK_EXIT_REQUEST_PATH}"
 trap 'rm -f "${KIOSK_BROWSER_PID_PATH}"' EXIT

@@ -11,6 +11,8 @@ SERVICE_PATH="/etc/systemd/system/${SERVICE_NAME}"
 AUTOSTART_PATH="${KIOSK_HOME}/.config/labwc/autostart"
 AUTOSTART_START="# BUPA_SCREEN_KIOSK_START"
 AUTOSTART_END="# BUPA_SCREEN_KIOSK_END"
+KIOSK_LOG_DIR="${KIOSK_HOME}/.local/state/bupa-screen"
+KIOSK_LOG_PATH="${KIOSK_LOG_DIR}/kiosk.log"
 
 if [[ -z "${KIOSK_HOME}" || ! -d "${KIOSK_HOME}" ]]; then
   echo "Could not find the home directory for ${KIOSK_USER}." >&2
@@ -79,6 +81,7 @@ EOF
 "${SUDO[@]}" install -m 0644 "${SERVICE_TEMP}" "${SERVICE_PATH}"
 
 "${SUDO[@]}" install -d -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" "$(dirname "${AUTOSTART_PATH}")"
+"${SUDO[@]}" install -d -o "${KIOSK_USER}" -g "${KIOSK_GROUP}" "${KIOSK_LOG_DIR}"
 if [[ -f "${AUTOSTART_PATH}" ]]; then
   awk -v start="${AUTOSTART_START}" -v end="${AUTOSTART_END}" '
     $0 == start { skipping = 1; next }
@@ -90,7 +93,7 @@ fi
 cat >>"${AUTOSTART_TEMP}" <<EOF
 
 ${AUTOSTART_START}
-"${APP_DIR}/scripts/start-kiosk.sh" &
+"${APP_DIR}/scripts/start-kiosk.sh" >"${KIOSK_LOG_PATH}" 2>&1 &
 ${AUTOSTART_END}
 EOF
 

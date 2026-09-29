@@ -140,6 +140,8 @@ The installer:
 
 The station selection is saved under `/run/bupa-screen`. Page refreshes and automatic service restarts retain it, while stopping the service or rebooting the Pi clears it and returns to mat testing and station selection.
 
+The desktop launcher waits for the system service during boot and writes its current-session output to `~/.local/state/bupa-screen/kiosk.log`.
+
 ### Automatic updates
 
 The update check runs before the server starts. It contacts the repository's `origin/main` branch, which verifies both internet connectivity and Git access more accurately than testing an unrelated website. If the check succeeds, the Pi runs `git pull --ff-only origin main`; otherwise it immediately continues with the installed version. Naming the branch explicitly means the updater does not depend on a configured upstream or remote default branch. The remote check has a 15-second limit and the pull has a five-minute limit.
@@ -233,6 +235,12 @@ To launch the kiosk again without rebooting, run this from the project directory
 
 ```bash
 ./scripts/start-kiosk.sh &
+```
+
+If the kiosk does not open automatically after login, inspect the desktop launcher log:
+
+```bash
+tail -n 200 ~/.local/state/bupa-screen/kiosk.log
 ```
 
 If a Pi is still running an older version of the launcher that immediately reopens Chromium, press `Ctrl` + `Alt` + `F2` to reach a text login. Log in with the Pi username and password; Chromium can continue running on the desktop without blocking this console. From there you can update and reboot:
