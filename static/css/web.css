@@ -132,6 +132,10 @@
     margin-top: 28px;
   }
 
+  .web-persona-buttons {
+    grid-template-columns: 1fr;
+  }
+
   .web-persona-buttons .station-button {
     min-height: 76px;
     border-radius: 20px;
