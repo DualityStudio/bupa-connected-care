@@ -198,9 +198,25 @@
   }
 }
 
-@container (max-width: 520px) {
+@container (max-width: 640px) {
   .web-stage .choice-panel {
     padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+
+  .web-stage .interaction-prompts {
+    min-height: 56px;
+    margin-bottom: 8px;
+  }
+
+  .web-stage .touch-hint {
+    gap: 8px;
+    padding: 8px 14px 8px 10px;
+    font-size: clamp(12px, 2.8cqw, 16px);
+  }
+
+  .web-stage .touch-hint__hand {
+    width: 30px;
+    height: 30px;
   }
 
   .web-stage .video-choices {
@@ -217,5 +233,24 @@
 
   .web-stage .video-choice__label {
     font-size: clamp(12px, 3.7cqw, 16px);
+  }
+
+  .web-stage .completion-overlay {
+    padding: 42px 34px;
+  }
+
+  .web-stage .completion-eyebrow {
+    margin-bottom: 16px;
+    font-size: 16px;
+  }
+
+  .web-stage .final-text {
+    font-size: clamp(18px, 3.9cqw, 22px);
+    line-height: 1.42;
+  }
+
+  .web-stage .completion-hint {
+    margin-top: 24px;
+    font-size: 14px;
   }
 }

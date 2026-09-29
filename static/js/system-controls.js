@@ -6,11 +6,12 @@
   const menu = document.getElementById("secret-menu");
   const closeButton = document.getElementById("secret-menu-close");
   const updateButton = document.getElementById("system-update");
+  const minimiseButton = document.getElementById("system-minimise");
   const exitButton = document.getElementById("system-exit");
   let tapTimes = [];
   let updateInFlight = false;
 
-  if (!menu || !closeButton || !updateButton || !exitButton) {
+  if (!menu || !closeButton || !updateButton || !minimiseButton || !exitButton) {
     return;
   }
 
@@ -149,9 +150,32 @@
     }
   }
 
+  async function minimiseKiosk() {
+    minimiseButton.disabled = true;
+    minimiseButton.textContent = "Minimising Kiosk…";
+
+    try {
+      const response = await fetch("/api/kiosk/minimise", { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || "The kiosk could not be minimised.");
+      }
+
+      closeMenu();
+      window.setTimeout(() => {
+        minimiseButton.disabled = false;
+        minimiseButton.textContent = "Minimise Kiosk";
+      }, 1500);
+    } catch (_error) {
+      minimiseButton.disabled = false;
+      minimiseButton.textContent = "Minimise Failed — Try Again";
+    }
+  }
+
   document.addEventListener("pointerup", registerTap);
   closeButton.addEventListener("click", closeMenu);
   updateButton.addEventListener("click", runUpdate);
+  minimiseButton.addEventListener("click", minimiseKiosk);
   exitButton.addEventListener("click", exitKiosk);
 
   window.bupaSystemControls = { close: closeMenu };

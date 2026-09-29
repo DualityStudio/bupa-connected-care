@@ -480,6 +480,46 @@ def terminate_kiosk_browser(pid: int) -> None:
             KIOSK_EXIT_REQUEST_PATH.unlink(missing_ok=True)
 
 
+def minimise_kiosk_browser(pid: int) -> str | None:
+    wtype_path = Path("/usr/bin/wtype")
+    if not wtype_path.is_file():
+        return "The kiosk minimiser is not installed"
+
+    try:
+        process_environment = Path(f"/proc/{pid}/environ").read_bytes().split(b"\0")
+    except OSError as error:
+        app.logger.error("Could not read the kiosk browser environment: %s", error)
+        return "The kiosk browser environment is unavailable"
+
+    environment = os.environ.copy()
+    for entry in process_environment:
+        key, separator, value = entry.partition(b"=")
+        if separator and key in {b"WAYLAND_DISPLAY", b"XDG_RUNTIME_DIR"}:
+            environment[key.decode("ascii")] = value.decode("utf-8", errors="surrogateescape")
+
+    if not environment.get("WAYLAND_DISPLAY") or not environment.get("XDG_RUNTIME_DIR"):
+        return "The Wayland desktop session is unavailable"
+
+    try:
+        result = subprocess.run(
+            [str(wtype_path), "-M", "logo", "-k", "d", "-m", "logo"],
+            cwd=BASE_DIR,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        app.logger.error("Could not minimise the kiosk browser: %s", error)
+        return "The kiosk could not be minimised"
+
+    if result.returncode != 0:
+        app.logger.error("Could not minimise the kiosk browser: %s", result.stderr.strip())
+        return "The kiosk could not be minimised"
+    return None
+
+
 @app.get("/")
 def index():
     return render_template("index.html", content=content_config)
@@ -543,6 +583,20 @@ def exit_kiosk():
         exit_timer.start()
 
     return jsonify({"closing": True})
+
+
+@app.post("/api/kiosk/minimise")
+def minimise_kiosk():
+    with kiosk_control_lock:
+        pid = running_kiosk_browser_pid()
+        if pid is None:
+            return jsonify({"error": "The kiosk browser is not running"}), 409
+
+        error = minimise_kiosk_browser(pid)
+        if error is not None:
+            return jsonify({"error": error}), 500
+
+    return jsonify({"minimising": True})
 
 
 @app.post("/api/update")
