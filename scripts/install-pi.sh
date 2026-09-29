@@ -31,7 +31,7 @@ fi
 
 echo "Installing Raspberry Pi packages…"
 "${SUDO[@]}" apt update
-"${SUDO[@]}" apt install -y python3-flask python3-gpiozero python3-waitress chromium curl git squeekboard wfplug-squeek wtype
+"${SUDO[@]}" apt install -y python3-flask python3-gpiozero python3-waitress chromium curl git wtype wvkbd
 
 if getent group gpio >/dev/null; then
   "${SUDO[@]}" usermod -a -G gpio "${KIOSK_USER}"

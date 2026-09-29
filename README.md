@@ -129,7 +129,7 @@ sudo reboot
 
 The installer:
 
-- Installs Flask, Waitress, GPIO Zero, Chromium, curl, Git, Raspberry Pi OS's Squeekboard on-screen keyboard, and the small Wayland input utility used by the minimise control. Montserrat is bundled with the application so the kiosk typography works without internet access.
+- Installs Flask, Waitress, GPIO Zero, Chromium, curl, Git, `wvkbd` for an on-screen desktop keyboard, and the small Wayland input utility used by the minimise control. Montserrat is bundled with the application so the kiosk typography works without internet access.
 - Grants the kiosk user GPIO access.
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
@@ -225,7 +225,7 @@ The idle loop is deliberately audible. Chromium is started with `--autoplay-poli
 
 ### Leave kiosk mode and perform maintenance
 
-Choose **Minimise Kiosk** in the hidden system controls to reveal the desktop without closing Chromium. The Squeekboard icon in the desktop taskbar can then show or hide the on-screen keyboard. Select Chromium from the taskbar to return to the running kiosk.
+Choose **Minimise Kiosk** in the hidden system controls to reveal the desktop without closing Chromium. The installer also installs the `wvkbd` on-screen keyboard for use from the desktop. Select Chromium from the taskbar to return to the running kiosk.
 
 Choose **Exit Kiosk** in the hidden system controls to close Chromium and leave the desktop visible. The kiosk launcher treats this as a deliberate exit and does not reopen the browser. The Flask server remains running in the background. With a keyboard connected, `Alt` + `F4` provides the same result. Open a terminal with `Ctrl` + `Alt` + `T`.
 
