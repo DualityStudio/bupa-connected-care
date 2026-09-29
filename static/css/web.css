@@ -200,18 +200,18 @@
   }
 
   .web-stage .video-choices {
-    gap: 8px;
+    gap: 6px;
   }
 
   .web-stage .video-choice {
-    gap: 8px;
+    gap: 6px;
   }
 
   .web-stage .video-choice__icon {
-    width: clamp(58px, 21cqw, 84px);
+    width: clamp(54px, 18cqw, 72px);
   }
 
   .web-stage .video-choice__label {
-    font-size: clamp(13px, 4.1cqw, 18px);
+    font-size: clamp(12px, 3.7cqw, 16px);
   }
 }
