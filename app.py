@@ -480,25 +480,36 @@ def terminate_kiosk_browser(pid: int) -> None:
             KIOSK_EXIT_REQUEST_PATH.unlink(missing_ok=True)
 
 
+def kiosk_browser_environment(pid: int) -> tuple[dict[str, str] | None, str | None]:
+    try:
+        process_environment = Path(f"/proc/{pid}/environ").read_bytes().split(b"\0")
+    except OSError as error:
+        app.logger.error("Could not read the kiosk browser environment: %s", error)
+        return None, "The kiosk browser environment is unavailable"
+
+    environment = os.environ.copy()
+    for entry in process_environment:
+        key, separator, value = entry.partition(b"=")
+        if separator and key in {
+            b"DBUS_SESSION_BUS_ADDRESS",
+            b"WAYLAND_DISPLAY",
+            b"XDG_RUNTIME_DIR",
+        }:
+            environment[key.decode("ascii")] = value.decode("utf-8", errors="surrogateescape")
+
+    if not environment.get("WAYLAND_DISPLAY") or not environment.get("XDG_RUNTIME_DIR"):
+        return None, "The Wayland desktop session is unavailable"
+    return environment, None
+
+
 def minimise_kiosk_browser(pid: int) -> str | None:
     wtype_path = Path("/usr/bin/wtype")
     if not wtype_path.is_file():
         return "The kiosk minimiser is not installed"
 
-    try:
-        process_environment = Path(f"/proc/{pid}/environ").read_bytes().split(b"\0")
-    except OSError as error:
-        app.logger.error("Could not read the kiosk browser environment: %s", error)
-        return "The kiosk browser environment is unavailable"
-
-    environment = os.environ.copy()
-    for entry in process_environment:
-        key, separator, value = entry.partition(b"=")
-        if separator and key in {b"WAYLAND_DISPLAY", b"XDG_RUNTIME_DIR"}:
-            environment[key.decode("ascii")] = value.decode("utf-8", errors="surrogateescape")
-
-    if not environment.get("WAYLAND_DISPLAY") or not environment.get("XDG_RUNTIME_DIR"):
-        return "The Wayland desktop session is unavailable"
+    environment, error = kiosk_browser_environment(pid)
+    if environment is None:
+        return error
 
     try:
         result = subprocess.run(
@@ -518,6 +529,47 @@ def minimise_kiosk_browser(pid: int) -> str | None:
         app.logger.error("Could not minimise the kiosk browser: %s", result.stderr.strip())
         return "The kiosk could not be minimised"
     return None
+
+
+def open_kiosk_keyboard(pid: int) -> str | None:
+    if not Path("/usr/bin/squeekboard").is_file():
+        return "The on-screen keyboard is not installed"
+
+    environment, error = kiosk_browser_environment(pid)
+    if environment is None:
+        return error
+    if not environment.get("DBUS_SESSION_BUS_ADDRESS"):
+        return "The desktop session bus is unavailable"
+
+    try:
+        result = subprocess.run(
+            [
+                "/usr/bin/busctl",
+                "call",
+                "--user",
+                "sm.puri.OSK0",
+                "/sm/puri/OSK0",
+                "sm.puri.OSK0",
+                "SetVisible",
+                "b",
+                "true",
+            ],
+            cwd=BASE_DIR,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as command_error:
+        app.logger.error("Could not open the on-screen keyboard: %s", command_error)
+        return "The on-screen keyboard could not be opened"
+
+    if result.returncode != 0:
+        app.logger.error("Could not open the on-screen keyboard: %s", result.stderr.strip())
+        return "The on-screen keyboard could not be opened"
+
+    return minimise_kiosk_browser(pid)
 
 
 @app.get("/")
@@ -597,6 +649,20 @@ def minimise_kiosk():
             return jsonify({"error": error}), 500
 
     return jsonify({"minimising": True})
+
+
+@app.post("/api/kiosk/keyboard")
+def show_kiosk_keyboard():
+    with kiosk_control_lock:
+        pid = running_kiosk_browser_pid()
+        if pid is None:
+            return jsonify({"error": "The kiosk browser is not running"}), 409
+
+        error = open_kiosk_keyboard(pid)
+        if error is not None:
+            return jsonify({"error": error}), 500
+
+    return jsonify({"opening": True})
 
 
 @app.post("/api/update")

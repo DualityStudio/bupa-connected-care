@@ -6,12 +6,13 @@
   const menu = document.getElementById("secret-menu");
   const closeButton = document.getElementById("secret-menu-close");
   const updateButton = document.getElementById("system-update");
+  const keyboardButton = document.getElementById("system-keyboard");
   const minimiseButton = document.getElementById("system-minimise");
   const exitButton = document.getElementById("system-exit");
   let tapTimes = [];
   let updateInFlight = false;
 
-  if (!menu || !closeButton || !updateButton || !minimiseButton || !exitButton) {
+  if (!menu || !closeButton || !updateButton || !keyboardButton || !minimiseButton || !exitButton) {
     return;
   }
 
@@ -172,9 +173,32 @@
     }
   }
 
+  async function openKeyboard() {
+    keyboardButton.disabled = true;
+    keyboardButton.textContent = "Opening Keyboard…";
+
+    try {
+      const response = await fetch("/api/kiosk/keyboard", { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || "The keyboard could not be opened.");
+      }
+
+      closeMenu();
+      window.setTimeout(() => {
+        keyboardButton.disabled = false;
+        keyboardButton.textContent = "Open On-Screen Keyboard";
+      }, 1500);
+    } catch (_error) {
+      keyboardButton.disabled = false;
+      keyboardButton.textContent = "Keyboard Failed — Try Again";
+    }
+  }
+
   document.addEventListener("pointerup", registerTap);
   closeButton.addEventListener("click", closeMenu);
   updateButton.addEventListener("click", runUpdate);
+  keyboardButton.addEventListener("click", openKeyboard);
   minimiseButton.addEventListener("click", minimiseKiosk);
   exitButton.addEventListener("click", exitKiosk);
 

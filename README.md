@@ -73,7 +73,7 @@ No Python environment, Flask process, database, environment file, or Forge daemo
 7. Returning from the outcome enters a lights-out start state. If the previous visitor is still on the mat, stepping off quietly re-arms it without showing the five-second countdown; the next fresh press starts the introduction.
 8. Leaving the mat during an active welcome or story starts the five-second countdown while the current video continues playing. The transparent overlaid buttons dim and **Step on the spot for the introduction** appears. Returning during the countdown cancels the pending reset without interrupting playback; expiry clears watched progress and starts the idle video.
 
-Tap any non-interactive area 10 times within four seconds to open the hidden system controls on the kiosk, mat controller, repeated press test, or statistics page. Taps on buttons, links, and form fields do not count. Every page can reset the experience, open statistics, check for an application update, minimise Chromium to the desktop, or exit the kiosk; persona selection appears only on the visitor kiosk. The initial setup screen also provides a link to the pressure-mat counter. Resetting does not change the selected persona.
+Tap any non-interactive area 10 times within four seconds to open the hidden system controls on the kiosk, mat controller, repeated press test, or statistics page. Taps on buttons, links, and form fields do not count. Every page can reset the experience, open statistics, check for an application update, open the on-screen keyboard, minimise Chromium to the desktop, or exit the kiosk; persona selection appears only on the visitor kiosk. The initial setup screen also provides a link to the pressure-mat counter. Resetting does not change the selected persona.
 
 ## Edit the content
 
@@ -129,7 +129,7 @@ sudo reboot
 
 The installer:
 
-- Installs Flask, Waitress, GPIO Zero, Chromium, curl, Git, and the small Wayland input utility used by the minimise control. Montserrat is bundled with the application so the kiosk typography works without internet access.
+- Installs Flask, Waitress, GPIO Zero, Chromium, curl, Git, Raspberry Pi OS's Squeekboard on-screen keyboard, and the small Wayland input utility used by the minimise control. Montserrat is bundled with the application so the kiosk typography works without internet access.
 - Grants the kiosk user GPIO access.
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
@@ -222,6 +222,8 @@ The idle loop is deliberately audible. Chromium is started with `--autoplay-poli
 ## Operation and troubleshooting
 
 ### Leave kiosk mode and perform maintenance
+
+Choose **Open On-Screen Keyboard** in the hidden system controls to start Squeekboard and reveal the desktop. True fullscreen Chromium sits above the standard keyboard layer, so the kiosk is minimised automatically. Open a terminal or another desktop application and use the keyboard there; Chromium continues running in the background.
 
 Choose **Minimise Kiosk** in the hidden system controls to reveal the desktop without closing Chromium. Select Chromium from the desktop taskbar to return to the running kiosk.
 

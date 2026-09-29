@@ -73,6 +73,10 @@
   border-color: rgba(255, 142, 142, 0.34);
 }
 
+.secret-action--keyboard {
+  border-color: rgba(128, 180, 255, 0.4);
+}
+
 .secret-action--minimise {
   border-color: rgba(140, 226, 208, 0.34);
 }
