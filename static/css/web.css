@@ -1,0 +1,215 @@
+.web-body {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(90, 209, 193, 0.2), transparent 30%),
+    linear-gradient(145deg, #0b3151, #031426 64%);
+}
+
+.web-persona-card {
+  max-width: 760px;
+  padding-top: clamp(36px, 5vh, 62px);
+  padding-bottom: clamp(36px, 5vh, 62px);
+}
+
+.web-persona-card h1 {
+  font-size: clamp(42px, 5.4vw, 68px);
+}
+
+.web-persona-card .setup-copy {
+  margin-top: 22px;
+  margin-bottom: 30px;
+  font-size: clamp(20px, 2.2vw, 28px);
+}
+
+.web-persona-picker {
+  margin-top: 28px;
+}
+
+.web-persona-buttons .station-button {
+  min-height: 90px;
+}
+
+.web-experience-screen {
+  display: grid;
+  place-items: center;
+  background: rgba(1, 8, 15, 0.72);
+}
+
+.web-stage {
+  position: relative;
+  width: min(100vw, calc(100dvh * 0.5625));
+  height: min(100dvh, calc(100vw * 1.7778));
+  overflow: hidden;
+  background: #020b14;
+  box-shadow: 0 0 80px rgba(0, 0, 0, 0.42);
+  container-type: inline-size;
+}
+
+.web-stage .media-frame {
+  position: absolute;
+}
+
+.web-start {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: clamp(130px, 22vh, 210px) 48px 48px;
+  border: 0;
+  background: rgba(2, 13, 24, 0.78);
+  color: #f8fbff;
+  text-align: center;
+  transition: opacity 360ms ease, visibility 0s linear 360ms;
+}
+
+.web-start.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.web-start span {
+  color: var(--station-accent);
+  font-size: clamp(20px, 2.3vw, 28px);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.web-start strong {
+  max-width: 14ch;
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.web-change-persona {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  left: 18px;
+  z-index: 14;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(2, 13, 24, 0.68);
+  color: #f8fbff;
+  font-size: clamp(13px, 1.7vw, 18px);
+  font-weight: 750;
+}
+
+.web-stage .choice-panel {
+  padding-right: 4.5%;
+  padding-bottom: max(52px, env(safe-area-inset-bottom));
+  padding-left: 4.5%;
+}
+
+.web-stage .video-choices {
+  gap: clamp(8px, 3cqw, 18px);
+}
+
+.web-stage .video-choice__icon {
+  width: clamp(64px, 24cqw, 112px);
+}
+
+.web-stage .video-choice__label {
+  width: 100%;
+  max-width: 100%;
+  font-size: clamp(14px, 4.4cqw, 24px);
+}
+
+.web-stage .completion-overlay {
+  z-index: 12;
+}
+
+.web-stage .completion-content {
+  max-width: 100%;
+}
+
+@media (max-width: 680px) {
+  .web-persona-screen {
+    padding: 22px;
+  }
+
+  .web-persona-card {
+    padding: 38px 24px;
+    border-radius: 30px;
+  }
+
+  .web-persona-card h1 {
+    font-size: clamp(38px, 11vw, 60px);
+  }
+
+  .web-persona-card .setup-copy {
+    margin: 22px auto 32px;
+    font-size: 20px;
+  }
+
+  .web-persona-picker {
+    margin-top: 28px;
+  }
+
+  .web-persona-buttons .station-button {
+    min-height: 76px;
+    border-radius: 20px;
+    font-size: 26px;
+  }
+
+  .web-stage .choice-panel {
+    padding-right: 4vw;
+    padding-bottom: max(34px, env(safe-area-inset-bottom));
+    padding-left: 4vw;
+  }
+
+  .web-stage .interaction-prompts {
+    min-height: 66px;
+    margin-bottom: 10px;
+  }
+
+  .web-stage .video-choices {
+    gap: 10px;
+  }
+
+  .web-stage .video-choice {
+    gap: 10px;
+  }
+
+  .web-stage .video-choice__icon {
+    width: clamp(64px, 24cqw, 92px);
+    border-width: 2px;
+  }
+
+  .web-stage .video-choice__label {
+    font-size: clamp(14px, 4.4cqw, 20px);
+  }
+
+  .web-stage .touch-hint {
+    padding: 9px 16px 9px 11px;
+    font-size: 14px;
+  }
+
+  .web-stage .touch-hint__hand {
+    width: 32px;
+    height: 32px;
+  }
+
+  .web-stage .completion-overlay {
+    padding: 50px 30px;
+  }
+
+  .web-stage .final-text {
+    font-size: clamp(20px, 5.4vw, 30px);
+    line-height: 1.42;
+  }
+
+  .web-stage .completion-eyebrow {
+    font-size: 17px;
+  }
+
+  .web-stage .completion-hint {
+    font-size: 15px;
+  }
+}

@@ -1,0 +1,29 @@
+# Use these directives inside the Forge site's existing server block, replacing
+# its current root, index, and location / directives where they overlap.
+# Replace /home/forge/example.com with the site's actual project directory.
+
+root /home/forge/example.com/web;
+index index.html;
+
+location = /content.json {
+    alias /home/forge/example.com/content.json;
+    add_header Cache-Control "no-cache";
+}
+
+location /static/media/ {
+    alias /home/forge/example.com/static/media/;
+    access_log off;
+    expires 7d;
+    add_header Cache-Control "public, max-age=604800";
+}
+
+location /static/ {
+    alias /home/forge/example.com/static/;
+    access_log off;
+    expires -1;
+    add_header Cache-Control "no-cache";
+}
+
+location / {
+    try_files $uri $uri/ /index.html;
+}

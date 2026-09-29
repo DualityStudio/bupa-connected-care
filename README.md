@@ -7,6 +7,7 @@ A local Flask application for a Raspberry Pi 4, portrait touchscreen, and pressu
 - Five-second step-away reset and a hidden 10-tap system menu.
 - A separate mat controller that can be loaded on a phone or second computer in either GPIO mode.
 - Timed animated placeholders, so the complete interaction works before the videos arrive.
+- A separate static browser experience with tap-to-start playback.
 
 ## Try it without a Raspberry Pi
 
@@ -34,6 +35,32 @@ The controller has separate **Stand on mat** and **Step off mat** buttons. Its s
 The repeated press test remains available directly at `/mat-test`. This page counts each released-to-pressed transition, shows the live mat state, and provides a reset button. Its temporary count is not included in the daily visitor statistics.
 
 To control the experience from another device on the same network, replace `localhost` with the server computer's IP address or hostname. For example: `http://raspberrypi.local:5000/mat-controller`.
+
+## Browser-hosted experience
+
+The browser version is a static site under `web/`. Each visitor chooses MAYA, MO, or MARY, then taps the opening screen to start the welcome video with sound. Progress is held only in that browser page, so visitors do not affect one another. It does not record statistics.
+
+The initial muted idle loop can autoplay under normal browser rules. The visitor's first tap unlocks audible welcome and story playback. After the final outcome is dismissed or expires, the selected persona returns to its tap-to-start state.
+
+### Preview locally
+
+From the project directory, start any simple static file server. Python includes one suitable for local testing:
+
+```bash
+python3 -m http.server 5055
+```
+
+Open [http://localhost:5055/web/](http://localhost:5055/web/). The Python command is only a local preview server; Python and Flask are not required by the deployed website.
+
+### Deploy with Laravel Forge
+
+Forge can serve the browser version directly through Nginx:
+
+1. Create the Forge site and connect this Git repository.
+2. Apply the directives from `deploy/forge-nginx.conf.example` inside the site's existing Nginx `server` block, replacing its current `root`, `index`, and overlapping `location` directives. Replace `/home/forge/example.com` with the actual project directory.
+3. Test and reload the Nginx configuration, enable the site's SSL certificate, and deploy.
+
+No Python environment, Flask process, database, environment file, or Forge daemon is needed for this version. Nginx serves `web/index.html`, `content.json`, and the shared static assets directly. The media paths in `content.json` can later be replaced with public S3 or CDN URLs without changing the experience.
 
 ## Visitor flow
 
