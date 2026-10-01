@@ -32,10 +32,13 @@ fi
 
 echo "Installing Raspberry Pi packages…"
 "${SUDO[@]}" apt update
-"${SUDO[@]}" apt install -y python3-flask python3-gpiozero python3-waitress chromium curl git wtype wvkbd
+"${SUDO[@]}" apt install -y python3-flask python3-gpiozero python3-serial python3-waitress chromium curl git wtype wvkbd
 
 if getent group gpio >/dev/null; then
   "${SUDO[@]}" usermod -a -G gpio "${KIOSK_USER}"
+fi
+if getent group dialout >/dev/null; then
+  "${SUDO[@]}" usermod -a -G dialout "${KIOSK_USER}"
 fi
 
 chmod +x \
@@ -63,9 +66,11 @@ After=local-fs.target network-online.target
 Type=simple
 User=${KIOSK_USER}
 Group=${KIOSK_GROUP}
-SupplementaryGroups=gpio
+SupplementaryGroups=gpio dialout
 WorkingDirectory=${APP_DIR}
 Environment=BUPA_GPIO_MODE=real
+Environment=BUPA_DMX_MODE=auto
+Environment=BUPA_DMX_START_ADDRESS=1
 Environment=BUPA_STATE_PATH=/run/bupa-screen/station
 Environment=PYTHONUNBUFFERED=1
 RuntimeDirectory=bupa-screen

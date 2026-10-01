@@ -3,8 +3,9 @@
 A local Flask application for a Raspberry Pi 4, portrait touchscreen, and pressure mat. It includes:
 
 - Boot-time mat testing and MAYA/MO/MARY station selection.
-- A shared idle loop, station welcome video, three watched/replayable stories, and final text.
+- A persona-specific idle loop and welcome video, three watched/replayable stories, and final text.
 - Five-second step-away reset and a hidden 10-tap system menu.
+- Optional persona-coloured DMX lighting that turns white while the mat is pressed.
 - A separate mat controller that can be loaded on a phone or second computer in either GPIO mode.
 - Timed animated placeholders, so the complete interaction works before the videos arrive.
 - A separate static browser experience with tap-to-start playback.
@@ -117,6 +118,14 @@ The application uses the same pin as the original prototype:
 
 Connect the normally-open pressure mat between GPIO 17 and ground. The internal pull-up is enabled in software, so do not connect the mat to 3.3 V or 5 V.
 
+When connecting the supplied mat cable, take care to line up the plugs correctly. They fit in only one direction and should not be forced.
+
+## DMX lighting
+
+The Raspberry Pi can control a Joylit RGBW decoder through the DSD TECH USB-to-DMX cable and a correctly wired 3-pin XLR-to-RJ45 adaptor. The selected persona's configured accent colour is shown while the mat is released; pressing the mat changes the three RGB channels to white, and releasing it immediately restores the persona colour. The kiosk continues normally when no DMX hardware is connected.
+
+See [`docs/dmx-lighting.md`](docs/dmx-lighting.md) for the wiring, one-time device update commands, connection checks and bench-test procedure. The Joylit's RJ45 input carries raw DMX, not Ethernet, and must not be connected to network equipment.
+
 ## Install on a Raspberry Pi 4
 
 Use the current 64-bit Raspberry Pi OS with Desktop. From this project directory, run:
@@ -129,8 +138,8 @@ sudo reboot
 
 The installer:
 
-- Installs Flask, Waitress, GPIO Zero, Chromium, curl, Git, `wvkbd` for an on-screen desktop keyboard, and the small Wayland input utility used by the minimise control. Montserrat is bundled with the application so the kiosk typography works without internet access.
-- Grants the kiosk user GPIO access.
+- Installs Flask, Waitress, GPIO Zero, PySerial, Chromium, curl, Git, `wvkbd` for an on-screen desktop keyboard, and the small Wayland input utility used by the minimise control. Montserrat is bundled with the application so the kiosk typography works without internet access.
+- Grants the kiosk user GPIO and USB serial (`dialout`) access.
 - Serves the Flask application through Waitress as `bupa-screen.service` and restarts it after failures.
 - Enables desktop auto-login.
 - Adds a managed kiosk entry to `~/.config/labwc/autostart`.
@@ -160,6 +169,8 @@ sudo reboot
 ```
 
 Future reboots will update automatically. Ordinary service crash restarts do not repeatedly contact Git. If a future update changes system packages or the system service itself, rerun `./scripts/install-pi.sh` manually after that update.
+
+The first DMX lighting update is one of those installer changes. On every existing Pi, pull the code, rerun `./scripts/install-pi.sh`, and reboot once. Full commands and verification steps are in [`docs/dmx-lighting.md`](docs/dmx-lighting.md).
 
 ## Pressure-mat test counter
 

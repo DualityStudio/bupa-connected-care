@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import atexit
 import json
 import logging
 import os
@@ -10,10 +11,12 @@ import signal
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from threading import Lock, Timer
+from threading import Event, Lock, Thread, Timer
 from typing import Any
 
 from flask import Flask, jsonify, render_template, request
+
+from lighting import OpenDmxOutput, colour_to_rgb
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -58,6 +61,8 @@ def load_content() -> dict[str, Any]:
         raise ValueError("content.json must define exactly MAYA, MO and MARY")
 
     for station_id, station in stations.items():
+        colour_to_rgb(str(station.get("accent", "")))
+
         for media_key in ("idleVideo", "welcomeVideo"):
             if not isinstance(station.get(media_key), dict):
                 raise ValueError(f"Station {station_id} must define {media_key}")
@@ -291,6 +296,8 @@ update_lock = Lock()
 kiosk_control_lock = Lock()
 selected_station = load_selected_station(content_config["stations"])
 station_ids = tuple(content_config["stations"])
+dmx_output = OpenDmxOutput()
+lighting_stop = Event()
 
 
 def video_stat_key(station: str, video_id: str) -> str:
@@ -422,6 +429,49 @@ def pressure_is_pressed() -> bool:
     return pressure_input.is_pressed
 
 
+def desired_lighting_values() -> tuple[int, int, int, int]:
+    with runtime_lock:
+        station_id = selected_station
+
+    if station_id is None:
+        return (0, 0, 0, 0)
+    if pressure_is_pressed():
+        return (255, 255, 255, 0)
+
+    red, green, blue = colour_to_rgb(content_config["stations"][station_id]["accent"])
+    return (red, green, blue, 0)
+
+
+def monitor_lighting() -> None:
+    previous_values: tuple[int, int, int, int] | None = None
+    reported_error: str | None = None
+
+    while not lighting_stop.is_set():
+        try:
+            values = desired_lighting_values()
+            if values != previous_values:
+                dmx_output.set_rgbw(*values)
+                previous_values = values
+            reported_error = None
+        except Exception as error:
+            message = str(error)
+            if message != reported_error:
+                app.logger.error("Could not update DMX lighting state: %s", error)
+                reported_error = message
+
+        lighting_stop.wait(0.05)
+
+
+def stop_lighting() -> None:
+    lighting_stop.set()
+    dmx_output.close()
+
+
+lighting_thread = Thread(target=monitor_lighting, name="lighting-state", daemon=True)
+lighting_thread.start()
+atexit.register(stop_lighting)
+
+
 def git_environment() -> dict[str, str]:
     environment = os.environ.copy()
     environment["GIT_TERMINAL_PROMPT"] = "0"
@@ -517,7 +567,13 @@ def stats_dashboard():
 
 @app.get("/health")
 def health():
-    return jsonify({"ok": True, "mode": pressure_input.mode})
+    return jsonify(
+        {
+            "ok": True,
+            "mode": pressure_input.mode,
+            "dmx": dmx_output.status(),
+        }
+    )
 
 
 @app.get("/api/update-status")
