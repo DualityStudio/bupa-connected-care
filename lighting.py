@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import time
 from pathlib import Path
 from threading import Event, Lock, Thread
 from typing import Any
@@ -12,6 +11,8 @@ from typing import Any
 
 LOGGER = logging.getLogger(__name__)
 DMX_FRAME_SIZE = 513
+DMX_BREAK_BAUDRATE = 57600
+DMX_DATA_BAUDRATE = 250000
 
 
 def colour_to_rgb(colour: str) -> tuple[int, int, int]:
@@ -49,6 +50,7 @@ class OpenDmxOutput:
         self._connected = False
         self._active_device: str | None = None
         self._last_error: str | None = None
+        self._frames_sent = 0
         self._serial_module: Any | None = None
         self._thread: Thread | None = None
 
@@ -83,6 +85,7 @@ class OpenDmxOutput:
                 "device": self._active_device,
                 "start_address": self.start_address,
                 "rgbw": list(self._colour),
+                "frames_sent": self._frames_sent,
                 "error": self._last_error,
             }
 
@@ -140,7 +143,7 @@ class OpenDmxOutput:
             try:
                 port = self._serial_module.Serial(
                     port=device,
-                    baudrate=250000,
+                    baudrate=DMX_DATA_BAUDRATE,
                     bytesize=self._serial_module.EIGHTBITS,
                     parity=self._serial_module.PARITY_NONE,
                     stopbits=self._serial_module.STOPBITS_TWO,
@@ -155,13 +158,18 @@ class OpenDmxOutput:
                     with self._lock:
                         frame = bytes(self._frame)
 
-                    # DMX512 requires an 88us minimum break and an 8us mark.
-                    port.break_condition = True
-                    time.sleep(0.00012)
-                    port.break_condition = False
-                    time.sleep(0.000012)
+                    # A zero byte at 57,600 baud produces a roughly 156us low
+                    # period followed by a roughly 35us mark. This is a more
+                    # dependable DMX break on FTDI USB adapters than toggling
+                    # the Linux serial driver's break condition.
+                    port.baudrate = DMX_BREAK_BAUDRATE
+                    port.write(b"\x00")
+                    port.flush()
+                    port.baudrate = DMX_DATA_BAUDRATE
                     port.write(frame)
                     port.flush()
+                    with self._lock:
+                        self._frames_sent += 1
             except (OSError, self._serial_module.SerialException) as error:
                 message = str(error)
                 self._set_connection_status(False, device, message)

@@ -101,11 +101,14 @@ A working connection reports:
     "connected": true,
     "device": "/dev/serial/by-id/...",
     "enabled": true,
+    "frames_sent": 1234,
     "start_address": 1
   },
   "ok": true
 }
 ```
+
+Refresh the command after a few seconds. `frames_sent` should continue increasing while the USB-DMX cable is connected.
 
 For recent lighting and server messages, run:
 
