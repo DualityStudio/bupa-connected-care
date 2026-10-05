@@ -45,10 +45,12 @@ Switch off and unplug the 24V supply while wiring. The USB-to-DMX cable carries 
 
 Set the Joylit DMX start address to `001`. The software sends:
 
-- Address 1: red
-- Address 2: green
+- Address 1: green
+- Address 2: red
 - Address 3: blue
 - Address 4: white, held at zero for the three-channel installation
+
+The application continues to define persona colours as ordinary RGB values. Only the physical DMX output is reordered to GRBW to match the live-event controller channel layout.
 
 ## Apply this update to an installed Raspberry Pi
 

@@ -71,9 +71,10 @@ class OpenDmxOutput:
 
     def set_rgbw(self, red: int, green: int, blue: int, white: int = 0) -> None:
         values = tuple(max(0, min(255, int(value))) for value in (red, green, blue, white))
+        transmitted_values = (values[1], values[0], values[2], values[3])
         with self._lock:
             self._colour = values
-            for offset, value in enumerate(values):
+            for offset, value in enumerate(transmitted_values):
                 self._frame[self.start_address + offset] = value
 
     def status(self) -> dict[str, Any]:

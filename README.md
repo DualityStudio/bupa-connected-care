@@ -311,14 +311,6 @@ BUPA_GPIO_MODE=mock python3 app.py
 
 The `/mat-controller` page remains available in real GPIO mode and works alongside the physical pressure mat. If the physical GPIO cannot initialise during server startup, the server still exits with a clear error rather than silently replacing the configured hardware input.
 
-## Remove the boot setup
+## Uninstall the kiosk
 
-Disable and remove the server service:
-
-```bash
-sudo systemctl disable --now bupa-screen.service
-sudo rm /etc/systemd/system/bupa-screen.service
-sudo systemctl daemon-reload
-```
-
-Then remove the block between `# BUPA_SCREEN_KIOSK_START` and `# BUPA_SCREEN_KIOSK_END` from `~/.config/labwc/autostart`.
+See [`docs/uninstall.md`](docs/uninstall.md) for the complete removal procedure, including preserving statistics, removing automatic Chromium startup, cleaning up the Labwc shortcut and optionally removing a separate OLA test installation.
