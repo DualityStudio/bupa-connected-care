@@ -3,7 +3,7 @@
   "stations": {
     "maya": {
       "name": "MAYA",
-      "accent": "#2fce7c",
+      "accent": "#00ce10",
       "idleVideo": {
         "label": "Maya idle loop",
         "src": "/static/media/maya/idle.mp4",
