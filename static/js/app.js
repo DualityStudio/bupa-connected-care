@@ -256,7 +256,7 @@
 
   function canChooseVideo() {
     return Boolean(
-      pressureIsPressed
+      (pressureIsPressed || countdownInterval !== null)
       && ["welcome", "ready", "playing", "complete"].includes(state),
     );
   }
@@ -590,8 +590,8 @@
   }
 
   function beginStepAway() {
-    showExperience();
     startResetCountdown();
+    showExperience();
   }
 
   function resumeVisitorSession() {
